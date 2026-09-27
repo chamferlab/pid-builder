@@ -14,6 +14,7 @@
   .toolbar{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
   .toolbar button,.toolbar label{color:#e8f2fa;background:#233b54;border:1px solid #405670;border-radius:7px;padding:7px 10px;font-size:12px;white-space:nowrap}
   .toolbar button:hover,.toolbar label:hover{background:#31516d}.toolbar .accent{background:#0d858f;border-color:#0d858f;color:#fff}.toolbar .accent:hover{background:#0e9aa5}
+  .toolbar button:disabled{opacity:.4;cursor:default}.toolbar button:disabled:hover{background:#233b54}
   input[type=file]{display:none}
   aside{background:#fff;overflow:auto}.palette{border-right:1px solid #d5e0e9;padding:17px}.inspector{border-left:1px solid #d5e0e9;padding:18px}
   h2{font-size:14px;margin:0 0 5px}p.hint{color:#708397;font-size:12px;line-height:1.45;margin:0 0 18px}
@@ -47,6 +48,7 @@
 <div class="app">
   <header><div class="mark">P</div><div class="brand"><strong>Seal Loop P&amp;ID Builder</strong><small>Drag symbols · connect ports · export drawing</small></div>
     <div class="toolbar">
+      <button id="undo" title="Undo (Ctrl/Cmd+Z)" disabled>↶ Undo</button><button id="redo" title="Redo (Ctrl/Cmd+Shift+Z or Ctrl+Y)" disabled>↷ Redo</button>
       <label title="Import an Inkscape SVG as the seal graphic">Import seal SVG<input id="sealFile" type="file" accept=".svg,image/svg+xml"></label>
       <button id="newProject" title="Start with an empty canvas">New drawing</button><button id="saveProject" title="Save an editable copy">Save project</button><label title="Open an editable project">Open project<input id="projectFile" type="file" accept=".json,application/json"></label>
       <button id="exportSVG" class="accent">Export SVG</button><button id="exportPNG" class="accent">Export PNG</button>
@@ -88,6 +90,8 @@
   const $=id=>document.getElementById(id),svg=$('drawing');
   let state={title:'Untitled seal loop',nodes:[],pipes:[],nextId:1,sealSvg:null};
   let insertionPreview=null,paletteDragKind=null;
+  const HISTORY_LIMIT=100;
+  let undoStack=[],redoStack=[],historyCurrent=null,historyGroup=null;
   let selected=null,pending=null,mode='select',drag=null,view={x:0,y:0,w:1500,h:900};
   const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const id=()=>`n${state.nextId++}`;
@@ -95,14 +99,14 @@
   const byId=key=>state.nodes.find(n=>n.id===key);
   const defaultPorts=kind=>specs[kind]?.ports?structuredClone(specs[kind].ports):kind==='seal'? [{id:'T1',x:-125,y:-236},{id:'T2',x:130,y:-227},{id:'B1',x:-129,y:236},{id:'B2',x:130,y:227}]:kind==='junction'? [{id:'L',x:-22,y:0},{id:'R',x:22,y:0},{id:'T',x:0,y:-22},{id:'B',x:0,y:22}]:
     [{id:'L',x:-specs[kind].w/2,y:0},{id:'R',x:specs[kind].w/2,y:0},...(specs[kind].group==='equipment'?[{id:'T',x:0,y:-specs[kind].h/2},{id:'B',x:0,y:specs[kind].h/2}]:[])];
-  function createNode(kind,x,y){const d=kind==='seal'?{w:455,h:500,tag:'SINGLE SEAL'}:specs[kind];if(!d)return;const n={id:id(),kind:d.group==='seal'?'seal':kind,x:Math.round(x),y:Math.round(y),w:d.w,h:d.h,tag:d.tag??kind,notes:'',ports:defaultPorts(kind)};if(d.group==='seal')n.sealVariant=kind;if(d.svg){n.artworkSource='media';n.artworkVersion=d.version}state.nodes.push(n);selected={type:'node',id:n.id};pending=null;drag=null;showInsertionPreview(null);mode='select';render();persist();return n}
+  function createNode(kind,x,y,commit=true){const d=kind==='seal'?{w:455,h:500,tag:'SINGLE SEAL'}:specs[kind];if(!d)return;const n={id:id(),kind:d.group==='seal'?'seal':kind,x:Math.round(x),y:Math.round(y),w:d.w,h:d.h,tag:d.tag??kind,notes:'',ports:defaultPorts(kind)};if(d.group==='seal')n.sealVariant=kind;if(d.svg){n.artworkSource='media';n.artworkVersion=d.version}state.nodes.push(n);selected={type:'node',id:n.id};pending=null;drag=null;showInsertionPreview(null);mode='select';render();if(commit)persist();return n}
   function restoreSymbolAssets(){
     const d=specs['circulating-pump'];
     for(const n of state.nodes){if(n.kind!=='circulating-pump'||n.artworkSource!=='media'||n.artworkVersion===d.version)continue;
       n.w=d.w;n.h=d.h;n.ports=structuredClone(d.ports);n.artworkVersion=d.version;
     }
   }
-  function seed(){state={title:'Untitled seal loop',nodes:[],pipes:[],nextId:1,sealSvg:null};selected=null;pending=null;drag=null;insertionPreview=null;mode='select';view={x:0,y:0,w:1500,h:900};render();persist()}
+  function seed(){state={title:'Untitled seal loop',nodes:[],pipes:[],nextId:1,sealSvg:null};selected=null;pending=null;drag=null;insertionPreview=null;mode='select';view={x:0,y:0,w:1500,h:900};render();persist();resetHistory()}
   const sealImage=n=>n.sealSvg||(n.sealVariant?specs[n.sealVariant]?.svg:state.sealSvg);
   const artworkImage=(n,href)=>`<image href="${escape(href)}" x="${-n.w/2}" y="${-n.h/2}" width="${n.w}" height="${n.h}" preserveAspectRatio="xMidYMid meet"/>`;
   function point(e){const p=new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse());return{x:p.x,y:p.y}}
@@ -188,14 +192,14 @@
     $('sheetTitle').textContent=state.title;$('count').textContent=`${state.nodes.length} symbols · ${state.pipes.length} pipes`;
     $('status').textContent=mode==='addPort'?'Click the seal graphic to place a port':pending?'Select another + port to connect':'Ready';$('addSealPort').classList.toggle('active',mode==='addPort');renderProperties();showInsertionPreview(insertionPreview);
   }
-  function renderProperties(){const box=$('properties');if(!selected){box.innerHTML=`<label class="field" for="titleEdit">Drawing title</label><input class="text" id="titleEdit" value="${escape(state.title)}"><div class="empty">Click any symbol or pipe to edit it. Use <b>+ Seal port</b> to place a connection exactly where it belongs on your imported seal.</div><div class="info"><b>Quick controls</b><br>Drag symbols to move them. Drag blank canvas to pan. Mouse wheel zooms. Esc cancels a connection or port placement.</div>`;$('titleEdit').oninput=e=>{state.title=e.target.value;$('sheetTitle').textContent=state.title;persist()};return}
+  function renderProperties(){const box=$('properties');if(!selected){box.innerHTML=`<label class="field" for="titleEdit">Drawing title</label><input class="text" id="titleEdit" value="${escape(state.title)}"><div class="empty">Click any symbol or pipe to edit it. Use <b>+ Seal port</b> to place a connection exactly where it belongs on your imported seal.</div><div class="info"><b>Quick controls</b><br>Drag symbols to move them. Drag blank canvas to pan. Mouse wheel zooms. Esc cancels a connection or port placement.</div>`;$('titleEdit').oninput=e=>{state.title=e.target.value;$('sheetTitle').textContent=state.title;persist('titleEdit')};return}
     if(selected.type==='pipe'){const p=state.pipes.find(p=>p.id===selected.id),a=p&&portPos(p.a),b=p&&portPos(p.b);if(!a||!b){selected=null;renderProperties();return}const g=pipeGeometry(a,b,p.route,portDirection(p.a));
       box.innerHTML=`<div class="info"><b>Selected pipe</b><br>Drag either turquoise handle to move both bends. The route remains attached when symbols move.</div><label class="field">Line color</label><div class="pipe-colors" role="group" aria-label="Line color">${Object.entries(PIPE_COLORS).map(([key,color])=>`<button class="color-choice" data-pipe-color="${key}" aria-pressed="${p.color===key}"><span class="color-dot" style="background:${color.value}"></span>${color.name}${p.color===key?' ✓':''}</button>`).join('')}</div><label class="field">Middle segment</label><button class="button" id="routeVertical">Vertical ${g.axis==='x'?'✓':''}</button><button class="button" id="routeHorizontal">Horizontal ${g.axis==='y'?'✓':''}</button><button class="button" id="routeCenter">Center bends between ports</button><button class="button danger" id="deleteSelected">Delete pipe</button>`;
       box.querySelectorAll('[data-pipe-color]').forEach(button=>button.onclick=()=>{p.color=button.dataset.pipeColor;render();persist()});
       $('routeVertical').onclick=()=>{p.route={axis:'x',value:(a.x+b.x)/2};render();persist()};$('routeHorizontal').onclick=()=>{p.route={axis:'y',value:(a.y+b.y)/2};render();persist()};$('routeCenter').onclick=()=>{p.route={axis:g.axis,value:g.axis==='x'?(a.x+b.x)/2:(a.y+b.y)/2};render();persist()};$('deleteSelected').onclick=deleteSelected;return}
     const n=byId(selected.id);if(!n){selected=null;renderProperties();return}
     box.innerHTML=`<div class="info"><b>${escape(n.kind==='seal'?(specs[n.sealVariant]?specs[n.sealVariant].name+' · '+specs[n.sealVariant].detail:'Mechanical seal'):specs[n.kind]?.name||n.kind)}</b><br>${n.ports.length} connection ports · X ${Math.round(n.x)}, Y ${Math.round(n.y)}</div><label class="field" for="tagEdit">Drawing tag / caption</label><input class="text" id="tagEdit" value="${escape(n.tag)}"><label class="field" for="notesEdit">Notes (saved in project)</label><textarea class="text" id="notesEdit">${escape(n.notes)}</textarea><label class="field" for="symbolScale">Size (%)</label><input class="text" id="symbolScale" type="number" min="25" max="300" step="5" value="${Math.round(nodeScale(n)*100)}"><div class="info">Rotation: ${n.rotation||0}° · Mirror: ${n[mirrorKey(n,'x')]?'horizontal ':''}${n[mirrorKey(n,'y')]?'vertical':''}${!n.mirrorX&&!n.mirrorY?'none':''}</div><div class="transform-controls"><button class="button" id="rotateLeft">↶ Rotate left 90°</button><button class="button" id="rotateRight">↷ Rotate right 90°</button><button class="button" id="mirrorHorizontal">Mirror horizontally</button><button class="button" id="mirrorVertical">Mirror vertically</button><button class="button" id="resetTransform">Reset size / rotation / mirror</button></div>${n.kind==='seal'?'<button class="button" id="addPortHere">+ Place custom seal port</button>':''}<button class="button" id="duplicateSelected">Duplicate symbol</button><button class="button danger" id="deleteSelected">Delete symbol</button><div class="info"><b>Ports</b><br>${n.ports.map(p=>escape(p.id)).join(' · ')}${n.kind==='seal'?'<br>The + marks in the drawing are clickable. Alt-click an added port to remove it.': ''}</div>`;
-    $('tagEdit').oninput=e=>{n.tag=e.target.value;renderCanvasOnly();persist()};$('notesEdit').oninput=e=>{n.notes=e.target.value;persist()};$('duplicateSelected').onclick=()=>{const copy=structuredClone(n);copy.id=id();copy.x+=45;copy.y+=45;state.nodes.push(copy);selected={type:'node',id:copy.id};render();persist()};
+    $('tagEdit').oninput=e=>{n.tag=e.target.value;renderCanvasOnly();persist('tagEdit:'+n.id)};$('notesEdit').oninput=e=>{n.notes=e.target.value;persist('notesEdit:'+n.id)};$('duplicateSelected').onclick=()=>{const copy=structuredClone(n);copy.id=id();copy.x+=45;copy.y+=45;state.nodes.push(copy);selected={type:'node',id:copy.id};render();persist()};
     const applyTransform=()=>{showInsertionPreview(null);render();persist()};
     $('symbolScale').onchange=e=>{const percent=Number(e.target.value);if(!Number.isFinite(percent)||percent<25||percent>300){e.target.value=Math.round(nodeScale(n)*100);return}n.scale=percent/100;applyTransform()};
     $('rotateLeft').onclick=()=>{n.rotation=((n.rotation||0)+270)%360;applyTransform()};$('rotateRight').onclick=()=>{n.rotation=((n.rotation||0)+90)%360;applyTransform()};
@@ -213,17 +217,22 @@
     const exists=state.pipes.some(p=>(p.a.node===pending.node&&p.a.port===pending.port&&p.b.node===nid&&p.b.port===pid)||(p.b.node===pending.node&&p.b.port===pending.port&&p.a.node===nid&&p.a.port===pid));
     if(!exists)state.pipes.push({id:id(),a:pending,b:ref});pending=null;drag=null;render();persist();
   }
-  svg.addEventListener('pointerdown',e=>{const port=e.target.closest('.port');if(port){beginPipe(port.dataset.node,port.dataset.port,e);return}const handle=e.target.closest('[data-route]');if(handle){const p=state.pipes.find(p=>p.id===handle.dataset.route);if(p){const a=portPos(p.a),b=portPos(p.b),g=pipeGeometry(a,b,p.route,portDirection(p.a));p.route={axis:g.axis,value:g.value};selected={type:'pipe',id:p.id};drag={type:'route',id:p.id};render()}return}const wire=e.target.closest('[data-pipe]');if(wire){selected={type:'pipe',id:wire.dataset.pipe};render();return}
+  svg.addEventListener('pointerdown',e=>{const port=e.target.closest('.port');if(port){beginPipe(port.dataset.node,port.dataset.port,e);return}const handle=e.target.closest('[data-route]');if(handle){const p=state.pipes.find(p=>p.id===handle.dataset.route);if(p){const a=portPos(p.a),b=portPos(p.b),g=pipeGeometry(a,b,p.route,portDirection(p.a));selected={type:'pipe',id:p.id};drag={type:'route',id:p.id,axis:g.axis};render()}return}const wire=e.target.closest('[data-pipe]');if(wire){selected={type:'pipe',id:wire.dataset.pipe};render();return}
     const nodeEl=e.target.closest('.node');if(mode==='addPort'){const seal=nodeEl&&byId(nodeEl.dataset.node);if(seal?.kind==='seal'){const world=point(e),p=transformPoint(seal,{x:world.x-seal.x,y:world.y-seal.y},true);let portNumber=1;while(seal.ports.some(p=>p.id===`P${portNumber}`))portNumber++;seal.ports.push({id:`P${portNumber}`,x:Math.round(p.x),y:Math.round(p.y),custom:true});selected={type:'node',id:seal.id};mode='select';render();persist()}return}
     if(nodeEl){const n=byId(nodeEl.dataset.node),p=point(e);selected={type:'node',id:n.id};drag={type:'node',id:n.id,dx:p.x-n.x,dy:p.y-n.y};render();return}
     selected=null;pending=null;const p=point(e);drag={type:'pan',sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y};render();
   });
-  window.addEventListener('pointermove',e=>{if(!drag)return;if(drag.type==='node'){const n=byId(drag.id);if(!n)return;const p=point(e);n.x=Math.round(p.x-drag.dx);n.y=Math.round(p.y-drag.dy);insertionPreview=insertionTarget(n.kind,{x:n.x,y:n.y},n.id);render()}else if(drag.type==='route'){const pipe=state.pipes.find(p=>p.id===drag.id);if(!pipe)return;const q=point(e);pipe.route.value=Math.round(pipe.route.axis==='x'?q.x:q.y);render()}else if(drag.type==='pan'){const rect=svg.getBoundingClientRect();view.x=drag.vx-(e.clientX-drag.sx)*view.w/rect.width;view.y=drag.vy-(e.clientY-drag.sy)*view.h/rect.height;render()}else if(drag.type==='connect'){drag.cursor=point(e);render()}});
+  window.addEventListener('pointermove',e=>{if(!drag)return;if(drag.type==='node'){const n=byId(drag.id);if(!n)return;const p=point(e);n.x=Math.round(p.x-drag.dx);n.y=Math.round(p.y-drag.dy);insertionPreview=insertionTarget(n.kind,{x:n.x,y:n.y},n.id);render()}else if(drag.type==='route'){const pipe=state.pipes.find(p=>p.id===drag.id);if(!pipe)return;const q=point(e);pipe.route={axis:drag.axis,value:Math.round(drag.axis==='x'?q.x:q.y)};render()}else if(drag.type==='pan'){const rect=svg.getBoundingClientRect();view.x=drag.vx-(e.clientX-drag.sx)*view.w/rect.width;view.y=drag.vy-(e.clientY-drag.sy)*view.h/rect.height;render()}else if(drag.type==='connect'){drag.cursor=point(e);render()}});
   window.addEventListener('pointerup',()=>{if(drag?.type==='node'){const n=byId(drag.id);if(n&&insertionPreview)insertInlineSymbol(n,insertionPreview);showInsertionPreview(null);render();persist()}else if(drag?.type==='route')persist();if(drag?.type!=='connect')drag=null});
   svg.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?.88:1.12,point(e))},{passive:false});
   function zoom(f,at={x:view.x+view.w/2,y:view.y+view.h/2}){const nw=Math.max(320,Math.min(4200,view.w*f)),nh=nw*.6;view.x=at.x-(at.x-view.x)*nw/view.w;view.y=at.y-(at.y-view.y)*nh/view.h;view.w=nw;view.h=nh;render()}
   $('zoomIn').onclick=()=>zoom(.8);$('zoomOut').onclick=()=>zoom(1.25);$('zoomReset').onclick=()=>{view={x:0,y:0,w:1500,h:900};render()};$('addSealPort').onclick=()=>setMode('addPort');
-  window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName))return;if(e.key==='Escape'){pending=null;drag=null;showInsertionPreview(null);mode='select';render()}if((e.key==='Delete'||e.key==='Backspace')&&selected)deleteSelected()});
+  window.addEventListener('keydown',e=>{
+    if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;
+    const key=e.key.toLowerCase();if((e.ctrlKey||e.metaKey)&&!e.altKey&&(key==='z'||key==='y')){e.preventDefault();if(key==='y'||e.shiftKey)$('redo').onclick();else $('undo').onclick();return}
+    if(e.key==='Escape'){pending=null;drag=null;showInsertionPreview(null);mode='select';render()}
+    if((e.key==='Delete'||e.key==='Backspace')&&selected){e.preventDefault();deleteSelected()}
+  });
   function equipmentGlyph(kind){
     const shapes={
       cooler:'<rect x="8" y="7" width="24" height="26" rx="1"/><path d="M 2 20 H 8 M 32 20 H 38 M 15 2 V 7 M 25 33 V 38 M 12 12 H 26 L 14 18 L 26 24 L 14 29"/>',
@@ -240,25 +249,45 @@
   // Single seal uses the original embedded vector artwork and its original ports.
   tiles('seal','sealPalette');tiles('instrument','instrumentPalette');tiles('equipment','equipmentPalette');$('canvasWrap').ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';showInsertionPreview(insertionTarget(paletteDragKind,point(e)))};
   $('canvasWrap').ondragleave=e=>{if(!$('canvasWrap').contains(e.relatedTarget))showInsertionPreview(null)};
-  $('canvasWrap').ondrop=e=>{e.preventDefault();const kind=e.dataTransfer.getData('text/plain');if(specs[kind]){const p=point(e),target=insertionTarget(kind,p);showInsertionPreview(null);const n=createNode(kind,p.x,p.y);if(target){insertInlineSymbol(n,target);render();persist()}}paletteDragKind=null;showInsertionPreview(null)};
+  $('canvasWrap').ondrop=e=>{e.preventDefault();const kind=e.dataTransfer.getData('text/plain');if(specs[kind]){const p=point(e),target=insertionTarget(kind,p);showInsertionPreview(null);const n=createNode(kind,p.x,p.y,false);if(target)insertInlineSymbol(n,target);render();persist()}paletteDragKind=null;showInsertionPreview(null)};
 
   $('sealFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const raw=await file.text();const doc=new DOMParser().parseFromString(raw,'image/svg+xml');if(doc.querySelector('parsererror')||doc.documentElement.localName!=='svg')throw Error('This is not a valid SVG.');
       // Keep the imported artwork inside an image element; it is displayed as inert SVG data.
       const base64=btoa(Array.from(new TextEncoder().encode(raw),b=>String.fromCharCode(b)).join(''));const importedSvg='data:image/svg+xml;base64,'+base64;
-      const n=(selected?.type==='node'&&byId(selected.id)?.kind==='seal'?byId(selected.id):null)||createNode('seal',view.x+view.w/2,view.y+view.h/2);n.sealSvg=importedSvg;delete n.sealVariant;n.tag=file.name.replace(/\.svg$/i,'');const vb=doc.documentElement.getAttribute('viewBox');let ratio=1.8;if(vb){const a=vb.trim().split(/[\s,]+/).map(Number);if(a.length===4&&a[2]>0&&a[3]>0)ratio=a[2]/a[3]}else{const w=parseFloat(doc.documentElement.getAttribute('width')),h=parseFloat(doc.documentElement.getAttribute('height'));if(w>0&&h>0)ratio=w/h}
+      const n=(selected?.type==='node'&&byId(selected.id)?.kind==='seal'?byId(selected.id):null)||createNode('seal',view.x+view.w/2,view.y+view.h/2,false);n.sealSvg=importedSvg;delete n.sealVariant;n.tag=file.name.replace(/\.svg$/i,'');const vb=doc.documentElement.getAttribute('viewBox');let ratio=1.8;if(vb){const a=vb.trim().split(/[\s,]+/).map(Number);if(a.length===4&&a[2]>0&&a[3]>0)ratio=a[2]/a[3]}else{const w=parseFloat(doc.documentElement.getAttribute('width')),h=parseFloat(doc.documentElement.getAttribute('height'));if(w>0&&h>0)ratio=w/h}
       n.w=Math.round(Math.max(200,Math.min(480,250*ratio)));n.h=250;n.ports=[];state.pipes=state.pipes.filter(p=>p.a.node!==n.id&&p.b.node!==n.id);pending=null;drag=null;selected={type:'node',id:n.id};render();persist();$('status').textContent=`Imported ${file.name}`;
     }catch(err){alert('Could not import SVG: '+err.message)}e.target.value=''};
-  function persist(){try{localStorage.setItem('seal-loop-pid-v1',JSON.stringify(state))}catch(err){$('status').textContent='Autosave full; use Save project'}}
+  function updateHistoryButtons(){$('undo').disabled=undoStack.length===0;$('redo').disabled=redoStack.length===0}
+  function resetHistory(){undoStack=[];redoStack=[];historyCurrent=JSON.stringify(state);historyGroup=null;updateHistoryButtons()}
+  function persist(group=null){const data=JSON.stringify(state);
+    if(historyCurrent!==null&&data!==historyCurrent){
+      if(!group||historyGroup!==group){undoStack.push(historyCurrent);if(undoStack.length>HISTORY_LIMIT)undoStack.shift()}
+      redoStack=[];historyCurrent=data;historyGroup=group;
+    }
+    updateHistoryButtons();try{localStorage.setItem('seal-loop-pid-v1',data)}catch(err){$('status').textContent='Autosave full; use Save project'}
+  }
+  function restoreHistory(isRedo=false){
+    // Finish a live drag before restoring, so it is also a single reversible action.
+    if(JSON.stringify(state)!==historyCurrent)persist();
+    const source=isRedo?redoStack:undoStack,destination=isRedo?undoStack:redoStack;
+    if(!source.length)return;
+    destination.push(historyCurrent);state=JSON.parse(source.pop());historyCurrent=JSON.stringify(state);historyGroup=null;
+    selected=null;pending=null;drag=null;paletteDragKind=null;mode='select';showInsertionPreview(null);render();persist();
+  }
+  $('undo').onclick=()=>restoreHistory();$('redo').onclick=()=>restoreHistory(true);
+  // Consecutive keystrokes in one field form one edit, until focus or another action changes.
+  document.addEventListener('pointerdown',()=>{historyGroup=null},true);
+  document.addEventListener('focusin',e=>{if(historyGroup&&historyGroup.split(':')[0]!==e.target.id)historyGroup=null});
   function download(name,blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
   const baseName=()=>state.title.trim().replace(/[^a-z0-9_-]+/gi,'-').replace(/^-|-$/g,'')||'seal-loop';
   $('saveProject').onclick=()=>download(baseName()+'.json',new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
   $('newProject').onclick=()=>{if(confirm('Start a new drawing with an empty canvas? Save your current project first if you want to keep it.'))seed()};
-  $('projectFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const next=JSON.parse(await file.text());if(!Array.isArray(next.nodes)||!Array.isArray(next.pipes)||!Number.isInteger(next.nextId))throw Error('Invalid project structure');state=next;restoreSymbolAssets();selected=null;pending=null;view={x:0,y:0,w:1500,h:900};render();persist()}catch(err){alert('Could not open project: '+err.message)}e.target.value=''};
+  $('projectFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const next=JSON.parse(await file.text());if(!Array.isArray(next.nodes)||!Array.isArray(next.pipes)||!Number.isInteger(next.nextId))throw Error('Invalid project structure');state=next;restoreSymbolAssets();selected=null;pending=null;view={x:0,y:0,w:1500,h:900};drag=null;mode='select';showInsertionPreview(null);render();persist();resetHistory()}catch(err){alert('Could not open project: '+err.message)}e.target.value=''};
   function exportSize(){let left=0,top=0,right=1500,bottom=900;for(const n of state.nodes){const bounds=nodeBounds(n);left=Math.min(left,n.x-bounds.w/2-85);right=Math.max(right,n.x+bounds.w/2+85);top=Math.min(top,n.y-bounds.h/2-85);bottom=Math.max(bottom,n.y+bounds.h/2+85)}return{x:Math.floor(left),y:Math.floor(top),w:Math.ceil(right-left),h:Math.ceil(bottom-top)}}
   function exportMarkup(){const copy=svg.cloneNode(true),s=exportSize();copy.querySelectorAll('.editor-only').forEach(el=>el.remove());copy.querySelectorAll('.select-outline').forEach(el=>el.remove());copy.querySelectorAll('.selected').forEach(el=>el.classList.remove('selected'));copy.removeAttribute('id');copy.setAttribute('xmlns',NS);copy.setAttribute('viewBox',`${s.x} ${s.y} ${s.w} ${s.h}`);copy.setAttribute('width',s.w);copy.setAttribute('height',s.h);copy.querySelector('defs')?.remove();return new XMLSerializer().serializeToString(copy)}
   $('exportSVG').onclick=()=>download(baseName()+'.svg',new Blob([exportMarkup()],{type:'image/svg+xml;charset=utf-8'}));
   $('exportPNG').onclick=async()=>{try{const data=exportMarkup(),size=exportSize(),url=URL.createObjectURL(new Blob([data],{type:'image/svg+xml;charset=utf-8'})),img=new Image();img.onload=()=>{try{const canvas=document.createElement('canvas');canvas.width=size.w*2;canvas.height=size.h*2;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>blob?download(baseName()+'.png',blob):alert('PNG export failed.'),'image/png')}catch(err){alert('PNG export failed: '+err.message)}finally{URL.revokeObjectURL(url)}};img.onerror=()=>{URL.revokeObjectURL(url);alert('PNG rendering failed. Check that the imported SVG does not reference external images or fonts.')};img.src=url}catch(err){alert('PNG export failed: '+err.message)}};
-  try{const saved=JSON.parse(localStorage.getItem('seal-loop-pid-v1'));if(saved&&Array.isArray(saved.nodes)&&Array.isArray(saved.pipes))state=saved;else seed()}catch{seed()}restoreSymbolAssets();render();persist();
+  try{const saved=JSON.parse(localStorage.getItem('seal-loop-pid-v1'));if(saved&&Array.isArray(saved.nodes)&&Array.isArray(saved.pipes))state=saved;else seed()}catch{seed()}restoreSymbolAssets();render();persist();resetHistory();
 })();
 </script>
 </body>

@@ -64,6 +64,14 @@ Equipment includes the supplied **accumulator, circulating pump, cooler, heater,
 
 The reservoir has three top ports and two side ports. The control valve has two line ports and a top actuator port. Saved circulating pump symbols update to the revised artwork and port positions while retaining port IDs, connections, and transformations.
 
+## Undo and redo
+
+Use **Undo** and **Redo** in the toolbar, **Ctrl/Cmd+Z** to undo, and **Ctrl/Cmd+Shift+Z** or **Ctrl+Y** to redo. The builder remembers up to 100 drawing edits during the current session.
+
+Adding, deleting, connecting, inserting, moving, routing, transforming, recoloring, importing seal artwork, and editing captions or notes can be reversed. Deleting a symbol and its connected pipes is one action; dragging a symbol or pipe bend is one action; consecutive typing in one field is grouped into one edit. Pan, zoom, and selection do not add undo steps. A new edit after undo clears the redo history.
+
+Keyboard shortcuts inside text fields retain the browser's normal text-editing behavior; use the toolbar to undo a drawing edit while a field is focused. History resets when starting a new drawing, opening a project, or reloading the page, and is not included in saved project JSON. Undo and redo autosave the restored drawing.
+
 ## Other controls
 
 | Action | How |
@@ -94,6 +102,7 @@ Browser storage is local and can be cleared; **Save project** is the portable ba
 - `README.md` — usage instructions.
 - `media/` — supplied source SVGs for dual seals and equipment, including `reservoir.svg` and `Control_valve.svg`.
 - `scripts/embed-symbols.py` — rebuilds the embedded catalog from the source SVGs.
+- `scripts/test-history.py` — Firefox regression tests for undo/redo, using only the Python standard library.
 
 After editing a source SVG, update its recorded artwork bounds in the embedding script if its size or location changed, then run:
 
@@ -103,8 +112,18 @@ python3 scripts/embed-symbols.py
 
 The script derives connection points from the marked circles and checks the port mapping. Reload the HTML after rebuilding. The original single seal is embedded separately and requires no external file.
 
+## Verify undo and redo
+
+With Python 3 and Firefox installed, run:
+
+```sh
+python3 scripts/test-history.py
+```
+
+The test starts a separate headless Firefox with a temporary profile. It checks restored drawing state, connections, colors, transformations, grouped edits, imports, keyboard shortcuts, and history limits without touching your normal browser profile.
+
 ## Current scope
 
-This is a drawing prototype, not a validated P&ID or an API-plan generator. Pipes have one adjustable middle segment per connection. Routing does not automatically avoid symbols or other pipes, and there is no undo history. Automatic insertion currently supports instruments and pipe junctions.
+This is a drawing prototype, not a validated P&ID or an API-plan generator. Pipes have one adjustable middle segment per connection. Routing does not automatically avoid symbols or other pipes. Automatic insertion currently supports instruments and pipe junctions.
 
-Future improvements include more piping symbols and line types, adjustable waypoints, collision-aware routing, undo/redo, and drawing validation.
+Future improvements include more piping symbols and line types, adjustable waypoints, collision-aware routing, and drawing validation.
