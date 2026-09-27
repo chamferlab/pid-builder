@@ -2,6 +2,7 @@
 """Rebuild the offline SVG symbol catalog in PID-Builder.html from media/."""
 import base64
 import json
+import hashlib
 import re
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -16,7 +17,9 @@ BOUNDS = {
     'dual-seal-fb-w-plug': [4.8715,76.4658,201.0721,152.605],
     'dual-seal-fb-wo-plug': [5.4387,57.0521,201.7727,160.4755],
     'accumulator': [75.6388,47.5058,49.046,201.9605],
-    'circulating-pump': [10.7201,47.696,174.564,173.2978],
+    'circulating-pump': [48.7685,84.2008,69.8332,71.3743],
+    'reservoir': [64.1265,104.6028,82.5414,72.7937],
+    'control-valve': [62.2243,106.0295,71.9266,54.832],
     'cooler': [52.6471,15.7316,102.4898,268.3659],
     'heater': [59.3427,15.9501,87.5195,266.5757],
 }
@@ -24,7 +27,8 @@ SVG = 'http://www.w3.org/2000/svg'
 ET.register_namespace('', SVG)
 catalog = {}
 for key, bounds in BOUNDS.items():
-    root = ET.parse(ROOT / 'media' / (key + '.svg')).getroot()
+    source = ROOT / 'media' / ('Control_valve.svg' if key == 'control-valve' else key + '.svg')
+    root = ET.parse(source).getroot()
     # Retain artwork and remove editor metadata, leaving a portable SVG image.
     for parent in list(root.iter()):
         for child in list(parent):
@@ -49,20 +53,27 @@ for key, bounds in BOUNDS.items():
     if key == 'accumulator': ids = ['B']
     elif key == 'circulating-pump': ids = ['T', 'L']
     elif key == 'heater': ids = ['T', 'B']
+    elif key == 'reservoir':
+        ports = sorted(ports[:3], key=lambda p:p['x']) + sorted(ports[3:], key=lambda p:p['x'])
+        ids = ['T1', 'T2', 'T3', 'L', 'R']
+    elif key == 'control-valve':
+        ports = ports[:1] + sorted(ports[1:], key=lambda p:p['x'])
+        ids = ['T', 'L', 'R']
     else:
         half = len(ports)//2
         # Sort each row left-to-right for stable port IDs.
         ports = sorted(ports[:half], key=lambda p:p['x']) + sorted(ports[half:], key=lambda p:p['x'])
         ids = [f'T{i+1}' for i in range(half)] + [f'B{i+1}' for i in range(half)]
+    assert len(ports) == len(ids), f'Port mapping mismatch for {key}'
     for p, port_id in zip(ports, ids): p['id'] = port_id
     if is_seal:
         arrangement = {'bb':'Back-to-back','ff':'Face-to-face','fb':'Face-to-back'}[key.split('-')[2]]
         option = 'Without plug seal' if '-wo-' in key else 'With plug seal'
         name, detail, tag, group = arrangement, option, arrangement.upper() + (' · WO PLUG' if '-wo-' in key else ' · W PLUG'), 'seal'
     else:
-        name = {'accumulator':'Accumulator','circulating-pump':'Circulating pump','cooler':'Cooler','heater':'Heater'}[key]
+        name = {'accumulator':'Accumulator','circulating-pump':'Circulating pump','cooler':'Cooler','heater':'Heater','reservoir':'Reservoir','control-valve':'Control valve'}[key]
         detail, tag, group = 'Process equipment', name.upper(), 'equipment'
-    catalog[key] = {'name':name,'detail':detail,'tag':tag,'group':group,'w':width*scale,'h':height*scale,'ports':ports,
+    catalog[key] = {'name':name,'detail':detail,'tag':tag,'group':group,'w':width*scale,'h':height*scale,'ports':ports,'version':hashlib.sha256(source.read_bytes()).hexdigest()[:12],
                     'svg':'data:image/svg+xml;base64,'+base64.b64encode(ET.tostring(root,encoding='utf-8')).decode()}
 html = ROOT / 'PID-Builder.html'
 text = html.read_text()
