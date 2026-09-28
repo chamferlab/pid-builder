@@ -24,10 +24,10 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="0.66646401"
-     inkscape:cx="283.5862"
+     inkscape:cx="284.33643"
      inkscape:cy="497.4012"
-     inkscape:window-width="1479"
-     inkscape:window-height="1341"
+     inkscape:window-width="1276"
+     inkscape:window-height="1365"
      inkscape:window-x="20"
      inkscape:window-y="20"
      inkscape:window-maximized="0"
@@ -869,39 +869,5 @@
        x="56.529079"
        y="-181.14"
        transform="scale(1,-1)" />
-    <circle
-       style="fill:none;stroke:#008080;stroke-width:1.06758;stroke-dasharray:none"
-       id="path116"
-       cx="174.97865"
-       cy="64.05558"
-       r="3.5760322" />
-    <text
-       xml:space="preserve"
-       style="font-size:9.53227px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans, Normal';writing-mode:lr-tb;direction:ltr;fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-       x="172.27623"
-       y="67.37085"
-       id="text118"><tspan
-         sodipodi:role="line"
-         id="tspan118"
-         style="fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-         x="172.27623"
-         y="67.37085">+</tspan></text>
-    <circle
-       style="fill:none;stroke:#008080;stroke-width:1.06758;stroke-dasharray:none"
-       id="circle118"
-       cx="174.97865"
-       cy="211.30185"
-       r="3.5760322" />
-    <text
-       xml:space="preserve"
-       style="font-size:9.53227px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans, Normal';writing-mode:lr-tb;direction:ltr;fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-       x="172.27623"
-       y="214.61711"
-       id="text119"><tspan
-         sodipodi:role="line"
-         id="tspan119"
-         style="fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-         x="172.27623"
-         y="214.61711">+</tspan></text>
   </g>
 </svg>

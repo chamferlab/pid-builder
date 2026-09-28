@@ -25,9 +25,9 @@
      inkscape:document-units="mm"
      inkscape:zoom="0.94252245"
      inkscape:cx="327.31316"
-     inkscape:cy="748.52329"
-     inkscape:window-width="1699"
-     inkscape:window-height="1341"
+     inkscape:cy="749.58427"
+     inkscape:window-width="2554"
+     inkscape:window-height="1365"
      inkscape:window-x="20"
      inkscape:window-y="20"
      inkscape:window-maximized="0"
@@ -54,90 +54,5 @@
        style="fill:#e6e6e6;stroke:#000000;stroke-width:1;stroke-dasharray:none"
        d="m 78.42756,163.59573 v 13.80074 h 4.442048 l 8.172869,-13.80074 z"
        id="path2" />
-    <circle
-       style="fill:none;stroke:#008080;stroke-width:1.06758;stroke-dasharray:none"
-       id="path116"
-       cx="122.75298"
-       cy="111.60631"
-       r="3.5760322" />
-    <text
-       xml:space="preserve"
-       style="font-size:9.53227px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans, Normal';writing-mode:lr-tb;direction:ltr;fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-       x="120.05053"
-       y="114.92157"
-       id="text118"><tspan
-         sodipodi:role="line"
-         id="tspan118"
-         style="fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-         x="120.05053"
-         y="114.92157">+</tspan></text>
-    <circle
-       style="fill:none;stroke:#008080;stroke-width:1.06758;stroke-dasharray:none"
-       id="path116-1"
-       cx="105.17249"
-       cy="111.60631"
-       r="3.5760322" />
-    <text
-       xml:space="preserve"
-       style="font-size:9.53227px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans, Normal';writing-mode:lr-tb;direction:ltr;fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-       x="102.47009"
-       y="114.92157"
-       id="text118-3"><tspan
-         sodipodi:role="line"
-         id="tspan118-2"
-         style="fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-         x="102.47009"
-         y="114.92157">+</tspan></text>
-    <circle
-       style="fill:none;stroke:#008080;stroke-width:1.06758;stroke-dasharray:none"
-       id="path116-14"
-       cx="87.232224"
-       cy="111.60631"
-       r="3.5760322" />
-    <text
-       xml:space="preserve"
-       style="font-size:9.53227px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans, Normal';writing-mode:lr-tb;direction:ltr;fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-       x="84.5298"
-       y="114.92159"
-       id="text118-9"><tspan
-         sodipodi:role="line"
-         id="tspan118-1"
-         style="fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-         x="84.5298"
-         y="114.92159">+</tspan></text>
-    <circle
-       style="fill:none;stroke:#008080;stroke-width:1.06758;stroke-dasharray:none"
-       id="path116-7"
-       cx="67.702492"
-       cy="155.54993"
-       r="3.5760322" />
-    <text
-       xml:space="preserve"
-       style="font-size:9.53227px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans, Normal';writing-mode:lr-tb;direction:ltr;fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-       x="65.000069"
-       y="158.86519"
-       id="text118-0"><tspan
-         sodipodi:role="line"
-         id="tspan118-4"
-         style="fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-         x="65.000069"
-         y="158.86519">+</tspan></text>
-    <circle
-       style="fill:none;stroke:#008080;stroke-width:1.06758;stroke-dasharray:none"
-       id="path116-9"
-       cx="143.09186"
-       cy="155.46935"
-       r="3.5760322" />
-    <text
-       xml:space="preserve"
-       style="font-size:9.53227px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans, Normal';writing-mode:lr-tb;direction:ltr;fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-       x="140.38943"
-       y="158.78462"
-       id="text118-6"><tspan
-         sodipodi:role="line"
-         id="tspan118-10"
-         style="fill:#008080;stroke:#008080;stroke-width:0.266896;stroke-dasharray:none"
-         x="140.38943"
-         y="158.78462">+</tspan></text>
   </g>
 </svg>

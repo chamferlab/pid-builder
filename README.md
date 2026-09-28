@@ -11,10 +11,14 @@ The browser restores the last drawing automatically. Choose **New drawing** for 
 ## Build a loop
 
 1. Drag a symbol from the left palette onto the sheet. Clicking a palette item places it at the canvas center.
-2. Click a `+` port on one symbol, then a `+` port on another to create a pipe. The visible `+` marks on the supplied artwork are clickable connection points.
+2. Choose **+ Port** and click any symbol's artwork to place each connection point. New symbols start without ports. Click a port on one symbol, then a port on another to create a pipe.
 3. Drag symbols to reposition them. Connected pipe endpoints follow.
-4. Select a pipe and drag either turquoise bend handle to move its middle segment. **Properties** also lets you change the segment between vertical and horizontal or recenter the bends.
+4. Select a pipe and drag its turquoise bend handles to move the middle segment. In **Properties → Pipe route**, choose **+ Add waypoint** to create more bends. Drag a waypoint to route around equipment; Alt-click one to remove it. The vertical, horizontal, and centered controls return the pipe to a simple route.
 5. Select a symbol to edit its caption or notes. Click blank space to edit the drawing title.
+
+### Snap symbols to the grid
+
+Use **Snap to grid** above the canvas to align symbol centers to the visible 25-unit grid when placing, dragging, or duplicating symbols. Hold **Alt** during placement or dragging to position a symbol freely. The toggle is off initially and its setting is remembered in this browser. Manually placed ports and pipe waypoints remain free-moving; dropping an instrument or junction onto a pipe aligns it to that pipe even when snapping is on.
 
 ### Insert instruments and junctions into a pipe
 
@@ -46,29 +50,35 @@ Attached pipe endpoints follow the transformed ports. Instrument labels and capt
 
 Select a pipe and choose **Properties → Line color**: **Teal**, **Blue**, **Red**, or **Orange**. The selected pipe keeps its chosen color while its bend handles remain turquoise. Colors persist in saved projects and SVG/PNG exports. Pipes without a chosen color retain the default dark stroke.
 
+### Instrument air lines
+
+Select a pipe and choose **Properties → Line type → Dashed instrument air**. Choose **Solid pipe** to restore the solid line. The line type can be combined with any line color or flow direction and is retained in saved projects and SVG/PNG exports. Existing pipes remain solid. Inserting an instrument or junction into an instrument air line carries the dashed style onto both new sections.
+
+### Pipe flow direction
+
+Select a pipe and choose **Properties → Flow direction** to show an arrow from its first connected port to its second, reverse the arrow, or remove it. The inspector identifies both ports. The arrow follows the pipe's longest straight segment when you move symbols or bends, matches the line color, and appears in saved projects and SVG/PNG exports. Existing pipes have no arrow until you set one. Inserting an instrument or junction into a directed pipe carries its direction onto both new sections.
+
+### Additional pipe waypoints
+
+Select a pipe and choose **Properties → Pipe route → + Add waypoint**. A turquoise handle appears on its longest straight segment; drag it anywhere to adjust the orthogonal route. Add more waypoints for additional bends. Alt-click a waypoint handle to remove it. **Vertical**, **Horizontal**, or **Reset to centered route** clears the added waypoints and restores a single movable middle segment. Waypoints stay in saved projects and exports. Pipe endpoints remain attached when symbols move, and inline insertion keeps the route on both sides of the inserted symbol.
+
 ## Symbol palette
 
-The mechanical seal palette includes the original four-port single seal and six dual seal variants:
+The mechanical seal palette includes the original single seal and six dual seal variants: back-to-back, face-to-face, and face-to-back, each with or without a plug seal. New seals start without connection ports; place them where needed with **+ Port**.
 
-| Arrangement | With plug seal (`w`) | Without plug seal (`wo`) |
-| --- | --- | --- |
-| Back-to-back (`bb`) | 4 ports | 2 ports |
-| Face-to-face (`ff`) | 4 ports | 2 ports |
-| Face-to-back (`fb`) | 4 ports | 2 ports |
+Each seal has its own artwork, so different types can coexist in one drawing. Any `+` marks still printed in artwork are only placement guides; use **+ Port** to make real connection points. Seals can be moved, transformed, duplicated, and deleted.
 
-Each seal has its own artwork and ports, so different types can coexist in one drawing. Seals can be moved, transformed, duplicated, and deleted.
+Instrumentation includes **PI, PT, TI, TT, FI, FT, and PDIT**. New instruments also start without ports. Inline insertion creates the two line ports required to split an existing pipe.
 
-Instrumentation includes **PI, PT, TI, TT, FI, FT, and PDIT**.
+Equipment includes the supplied **accumulator, circulating pump, cooler, heater, reservoir, and control valve**, plus a bladder-accumulator reservoir, an N₂-connected reservoir, and a four-way pipe junction. The six supplied equipment types have compact palette icons and use their SVG artwork on the canvas. Place their ports manually like any other symbol.
 
-Equipment includes the supplied **accumulator, circulating pump, cooler, heater, reservoir, and control valve**, plus a bladder-accumulator reservoir, an N₂-connected reservoir, and a four-way pipe junction. The six supplied equipment types have compact palette icons and use their SVG artwork on the canvas.
-
-The reservoir has three top ports and two side ports. The control valve has two line ports and a top actuator port. Saved circulating pump symbols update to the revised artwork and port positions while retaining port IDs, connections, and transformations.
+Place equipment ports on the nozzles you want to use. Saved circulating pump symbols update to revised artwork while retaining manually placed ports and transformations.
 
 ## Undo and redo
 
 Use **Undo** and **Redo** in the toolbar, **Ctrl/Cmd+Z** to undo, and **Ctrl/Cmd+Shift+Z** or **Ctrl+Y** to redo. The builder remembers up to 100 drawing edits during the current session.
 
-Adding, deleting, connecting, inserting, moving, routing, transforming, recoloring, importing seal artwork, and editing captions or notes can be reversed. Deleting a symbol and its connected pipes is one action; dragging a symbol or pipe bend is one action; consecutive typing in one field is grouped into one edit. Pan, zoom, and selection do not add undo steps. A new edit after undo clears the redo history.
+Adding, deleting, connecting, inserting, moving, routing, transforming, recoloring, setting pipe direction, importing seal artwork, and editing captions or notes can be reversed. Deleting a symbol and its connected pipes is one action; dragging a symbol or pipe bend is one action; consecutive typing in one field is grouped into one edit. Pan, zoom, and selection do not add undo steps. A new edit after undo clears the redo history.
 
 Keyboard shortcuts inside text fields retain the browser's normal text-editing behavior; use the toolbar to undo a drawing edit while a field is focused. History resets when starting a new drawing, opening a project, or reloading the page, and is not included in saved project JSON. Undo and redo autosave the restored drawing.
 
@@ -76,14 +86,16 @@ Keyboard shortcuts inside text fields retain the browser's normal text-editing b
 
 | Action | How |
 | --- | --- |
-| Add a seal port | Choose **+ Seal port**, then click the seal artwork. Works on transformed seals too. |
-| Remove an added port | Alt-click it. Supplied artwork ports are protected. |
+| Add a port | Choose **+ Port**, then click any symbol's artwork. Works on transformed symbols too. |
+| Remove a port | Select its symbol and click **Remove [port]** in Properties, or Alt-click the port. Connected pipes on that port are removed too. |
 | Pan | Drag empty sheet space. |
 | Zoom | Use the mouse wheel or the `−`, `100%`, and `+` buttons. |
 | Cancel a connection, port placement, or insertion preview | Press Esc. |
 | Delete a selected pipe or symbol | Press Delete/Backspace or use **Delete** in Properties. |
 
-**Import seal SVG** replaces the selected seal, or adds a seal at the canvas center if no seal is selected. Imported artwork is stored on its own symbol. Replacement clears that seal's old ports and connected pipes; use **+ Seal port** to place new connection points. Older projects containing a globally imported seal remain supported.
+**Import seal SVG** replaces the selected seal, or adds a seal at the canvas center if no seal is selected. Imported artwork is stored on its own symbol. Replacement clears that seal's old ports and connected pipes; use **+ Port** to place new connection points. Older projects containing a globally imported seal remain supported.
+
+Older saved drawings are converted once when opened: predefined ports on seals, instruments, and equipment, along with their connected pipes, are removed so all symbols can be ported manually. Drawings already converted to manual seal and instrument ports retain those ports while equipment ports are cleared. The original imported JSON file is unchanged. Before migrating a drawing restored from browser storage, the builder saves its original JSON in browser storage under `seal-loop-pid-v1-before-all-manual-ports`.
 
 ## Save and export
 
@@ -110,7 +122,7 @@ After editing a source SVG, update its recorded artwork bounds in the embedding 
 python3 scripts/embed-symbols.py
 ```
 
-The script derives connection points from the marked circles and checks the port mapping. Reload the HTML after rebuilding. The original single seal is embedded separately and requires no external file.
+The script accepts SVG artwork with or without marked connection circles. New symbols receive ports manually. Reload the HTML after rebuilding. The original single seal is embedded separately and requires no external file.
 
 ## Verify undo and redo
 
@@ -124,6 +136,6 @@ The test starts a separate headless Firefox with a temporary profile. It checks 
 
 ## Current scope
 
-This is a drawing prototype, not a validated P&ID or an API-plan generator. Pipes have one adjustable middle segment per connection. Routing does not automatically avoid symbols or other pipes. Automatic insertion currently supports instruments and pipe junctions.
+This is a drawing prototype, not a validated P&ID or an API-plan generator. Routing does not automatically avoid symbols or other pipes. Automatic insertion currently supports instruments and pipe junctions.
 
-Future improvements include more piping symbols and line types, adjustable waypoints, collision-aware routing, and drawing validation.
+Future improvements include more piping symbols and line types, collision-aware routing, and drawing validation.
