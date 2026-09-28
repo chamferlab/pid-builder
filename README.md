@@ -13,21 +13,30 @@ The browser restores the last drawing automatically. Choose **New drawing** for 
 1. Drag a symbol from the left palette onto the sheet. Clicking a palette item places it at the canvas center.
 2. Choose **+ Port** and click any symbol's artwork to place each connection point. New symbols start without ports. Click a port on one symbol, then a port on another to create a pipe.
 3. Drag symbols to reposition them. Connected pipe endpoints follow.
-4. Select a pipe and drag its turquoise bend handles to move the middle segment. In **Properties → Pipe route**, choose **+ Add waypoint** to create more bends. Drag a waypoint to route around equipment; Alt-click one to remove it. The vertical, horizontal, and centered controls return the pipe to a simple route.
+4. Select a pipe and drag its turquoise bend handles to move the middle segment. In **Properties → Pipe route**, choose either **L** option for a single corner, or **+ Add waypoint** to create more bends. Drag a waypoint to route around equipment; Alt-click one to remove it. The vertical, horizontal, and centered controls return the pipe to a movable middle segment.
 5. Select a symbol to edit its caption or notes. Click blank space to edit the drawing title.
+
+### Select and align several symbols
+
+Click a symbol, then **Shift-click** others to add or remove them from the selection. **Ctrl/Cmd+A** selects all symbols. Drag any selected symbol to move the group; connected pipe endpoints follow. If a pipe connects two selected symbols, its route moves with the group too.
+
+With several symbols selected, use **Properties → Align symbols** to align their left edges, horizontal centers, right edges, top edges, vertical centers, or bottom edges. The first selected symbol is the reference and stays in place. Alignment uses the visible symbol bounds, including rotation and size.
+
+**Duplicate selected symbols** copies the symbols and any pipes between them, offset as a group. **Delete selected symbols** removes the group and its connected pipes. Group moves, alignment, duplication, and deletion each form one undo step.
 
 ### Snap symbols to the grid
 
-Use **Snap to grid** above the canvas to align symbol centers to the visible 25-unit grid when placing, dragging, or duplicating symbols. Hold **Alt** during placement or dragging to position a symbol freely. The toggle is off initially and its setting is remembered in this browser. Manually placed ports and pipe waypoints remain free-moving; dropping an instrument or junction onto a pipe aligns it to that pipe even when snapping is on.
+Use **Snap to grid** above the canvas to align symbol centers to the visible 25-unit grid when placing, dragging, or duplicating symbols. Hold **Alt** during placement or dragging to position a symbol freely. The toggle is off initially and its setting is remembered in this browser. Manually placed ports and pipe waypoints remain free-moving; dropping an inline symbol onto a pipe aligns it to that pipe even when snapping is on.
 
-### Insert instruments and junctions into a pipe
+### Insert instruments, valves, and junctions into a pipe
 
-Drop an instrument or pipe junction onto an existing pipe. A turquoise **Insert instrument** or **Insert junction** preview shows the insertion point. Releasing the symbol splits the pipe into two connections, leaving a gap for the symbol and connecting both sides automatically.
+Drop an instrument, isolation valve, check valve, or pipe junction onto an existing pipe. A turquoise insertion preview shows the insertion point. Releasing the symbol splits the pipe into two connections, leaving a gap for the symbol and connecting both sides automatically.
 
 - Horizontal and vertical segments are supported, including segments of bent pipes.
 - The straight segment must have room for the symbol and a short lead on each side. Drops elsewhere place the symbol normally.
-- Unconnected instruments and junctions already on the canvas can also be dragged onto a pipe.
+- Unconnected instruments, valves, and junctions already on the canvas can also be dragged onto a pipe.
 - Junctions keep all four ports: two connect along the line, and two remain available for branches.
+- An inserted check valve points in the pipe's flow direction when an arrow is set. Rotate or mirror it to change the direction later.
 - Resized symbols fit using their current size; insertion aligns them with the target line.
 - Moving a connected symbol retains its existing connections.
 - Both resulting pipe sections inherit the original line color.
@@ -50,6 +59,12 @@ Attached pipe endpoints follow the transformed ports. Instrument labels and capt
 
 Select a pipe and choose **Properties → Line color**: **Teal**, **Blue**, **Red**, or **Orange**. The selected pipe keeps its chosen color while its bend handles remain turquoise. Colors persist in saved projects and SVG/PNG exports. Pipes without a chosen color retain the default dark stroke.
 
+### Line data
+
+Select a pipe and fill in **Line number**, **Process service**, **Line size**, and **Piping specification** in Properties. These are free-text fields so you can use your project's own units and naming convention. A line number appears next to the pipe and in SVG/PNG exports. All four fields are saved in project JSON and can be undone or redone.
+
+Inserting an instrument, valve, or junction splits a pipe into segments of the same logical line. Editing line data on either segment updates every segment of that line. Duplicating a group of symbols copies their internal pipes into a separate logical line with the same field values. Separately drawn pipes remain separate lines even if you type the same line number on them.
+
 ### Instrument air lines
 
 Select a pipe and choose **Properties → Line type → Dashed instrument air**. Choose **Solid pipe** to restore the solid line. The line type can be combined with any line color or flow direction and is retained in saved projects and SVG/PNG exports. Existing pipes remain solid. Inserting an instrument or junction into an instrument air line carries the dashed style onto both new sections.
@@ -59,6 +74,8 @@ Select a pipe and choose **Properties → Line type → Dashed instrument air**.
 Select a pipe and choose **Properties → Flow direction** to show an arrow from its first connected port to its second, reverse the arrow, or remove it. The inspector identifies both ports. The arrow follows the pipe's longest straight segment when you move symbols or bends, matches the line color, and appears in saved projects and SVG/PNG exports. Existing pipes have no arrow until you set one. Inserting an instrument or junction into a directed pipe carries its direction onto both new sections.
 
 ### Additional pipe waypoints
+
+For a pipe that needs exactly one bend, choose **L: horizontal then vertical** or **L: vertical then horizontal** in **Properties → Pipe route**. The turquoise corner can be clicked to switch between the two L shapes. Its position follows both connected ports when symbols move. If the ports line up horizontally or vertically, the L route appears as a straight line.
 
 Select a pipe and choose **Properties → Pipe route → + Add waypoint**. A turquoise handle appears on its longest straight segment; drag it anywhere to adjust the orthogonal route. Add more waypoints for additional bends. Alt-click a waypoint handle to remove it. **Vertical**, **Horizontal**, or **Reset to centered route** clears the added waypoints and restores a single movable middle segment. Waypoints stay in saved projects and exports. Pipe endpoints remain attached when symbols move, and inline insertion keeps the route on both sides of the inserted symbol.
 
@@ -70,7 +87,9 @@ Each seal has its own artwork, so different types can coexist in one drawing. An
 
 Instrumentation includes **PI, PT, TI, TT, FI, FT, and PDIT**. New instruments also start without ports. Inline insertion creates the two line ports required to split an existing pipe.
 
-Equipment includes the supplied **accumulator, circulating pump, cooler, heater, reservoir, and control valve**, plus a bladder-accumulator reservoir, an N₂-connected reservoir, and a four-way pipe junction. The six supplied equipment types have compact palette icons and use their SVG artwork on the canvas. Place their ports manually like any other symbol.
+Equipment includes the supplied **accumulator, circulating pump, cooler, heater, reservoir, and control valve**, plus a bladder-accumulator reservoir, an N₂-connected reservoir, an **air driven pump**, **isolation valve**, **check valve**, **drain**, **vent**, and a four-way pipe junction. The six supplied equipment types use their SVG artwork on the canvas. The new symbols use built-in vector artwork, so they remain available offline and in exports.
+
+Place ports manually on the air driven pump, drain, and vent at the connections you need. Valves also start without ports when placed on empty canvas; dropping one onto a pipe adds two line ports and connects it automatically. Drains and vents are terminal symbols rather than inline components.
 
 Place equipment ports on the nozzles you want to use. Saved circulating pump symbols update to revised artwork while retaining manually placed ports and transformations.
 
@@ -78,7 +97,7 @@ Place equipment ports on the nozzles you want to use. Saved circulating pump sym
 
 Use **Undo** and **Redo** in the toolbar, **Ctrl/Cmd+Z** to undo, and **Ctrl/Cmd+Shift+Z** or **Ctrl+Y** to redo. The builder remembers up to 100 drawing edits during the current session.
 
-Adding, deleting, connecting, inserting, moving, routing, transforming, recoloring, setting pipe direction, importing seal artwork, and editing captions or notes can be reversed. Deleting a symbol and its connected pipes is one action; dragging a symbol or pipe bend is one action; consecutive typing in one field is grouped into one edit. Pan, zoom, and selection do not add undo steps. A new edit after undo clears the redo history.
+Adding, deleting, connecting, inserting, moving, routing, transforming, recoloring, setting pipe direction, editing line data, importing seal artwork, and editing captions or notes can be reversed. Deleting a symbol and its connected pipes is one action; dragging a symbol or pipe bend is one action; consecutive typing in one field is grouped into one edit. Pan, zoom, and selection do not add undo steps. A new edit after undo clears the redo history.
 
 Keyboard shortcuts inside text fields retain the browser's normal text-editing behavior; use the toolbar to undo a drawing edit while a field is focused. History resets when starting a new drawing, opening a project, or reloading the page, and is not included in saved project JSON. Undo and redo autosave the restored drawing.
 
@@ -92,6 +111,7 @@ Keyboard shortcuts inside text fields retain the browser's normal text-editing b
 | Zoom | Use the mouse wheel or the `−`, `100%`, and `+` buttons. |
 | Cancel a connection, port placement, or insertion preview | Press Esc. |
 | Delete a selected pipe or symbol | Press Delete/Backspace or use **Delete** in Properties. |
+| Select several symbols | Shift-click symbols, or press Ctrl/Cmd+A to select all. |
 
 **Import seal SVG** replaces the selected seal, or adds a seal at the canvas center if no seal is selected. Imported artwork is stored on its own symbol. Replacement clears that seal's old ports and connected pipes; use **+ Port** to place new connection points. Older projects containing a globally imported seal remain supported.
 
@@ -101,7 +121,7 @@ Older saved drawings are converted once when opened: predefined ports on seals, 
 
 | Command | Result |
 | --- | --- |
-| **Save project** | Downloads editable JSON with symbols, ports, connections, routes, colors, transformations, captions, and notes. |
+| **Save project** | Downloads editable JSON with symbols, ports, connections, routes, line data, colors, transformations, captions, and notes. |
 | **Open project** | Loads a saved project JSON. |
 | **Export SVG** | Downloads a clean drawing with embedded SVG artwork and line colors, without the grid, handles, previews, or selection marks. |
 | **Export PNG** | Downloads a raster image at twice the drawing's SVG dimensions. |
@@ -136,6 +156,6 @@ The test starts a separate headless Firefox with a temporary profile. It checks 
 
 ## Current scope
 
-This is a drawing prototype, not a validated P&ID or an API-plan generator. Routing does not automatically avoid symbols or other pipes. Automatic insertion currently supports instruments and pipe junctions.
+This is a drawing prototype, not a validated P&ID or an API-plan generator. Routing does not automatically avoid symbols or other pipes. Automatic insertion currently supports instruments, isolation valves, check valves, and pipe junctions.
 
-Future improvements include more piping symbols and line types, collision-aware routing, and drawing validation.
+Future improvements include more line types, collision-aware routing, and drawing validation.

@@ -138,6 +138,141 @@ def run_tests(browser):
     assert [port['id'] for port in state()['nodes'][0]['ports']] == ['P1']
     load(empty_project)
     print('PASS: migrate old symbol ports and preserve current manual ports', flush=True)
+    for kind in ['air-driven-pump', 'isolation-valve', 'check-valve', 'drain', 'vent']:
+        load(empty_project)
+        roundtrip(lambda kind=kind: add(kind), f'add {kind}')
+        assert state()['nodes'][0]['kind'] == kind and state()['nodes'][0]['ports'] == []
+        assert b.js("return document.querySelector('#nodes .symbol-artwork').children.length > 0")
+    valve_fixture = dict(title='Valve insertion', nodes=[
+        dict(id='n0', kind='junction', x=200, y=400, w=44, h=44, tag='', notes='', ports=junction_ports),
+        dict(id='n1', kind='junction', x=800, y=400, w=44, h=44, tag='', notes='', ports=junction_ports),
+    ], pipes=[dict(id='n2', a=dict(node='n0', port='R'), b=dict(node='n1', port='L'), color='red', direction='forward')], nextId=3, sealSvg=None, portModeVersion=3)
+    def drop_kind(kind, x, y):
+        b.js('''const svg=document.getElementById('drawing'),p=new DOMPoint(arguments[1],arguments[2]).matrixTransform(svg.getScreenCTM()),dt=new DataTransfer();dt.setData('text/plain',arguments[0]);document.getElementById('canvasWrap').dispatchEvent(new DragEvent('drop',{clientX:p.x,clientY:p.y,dataTransfer:dt,cancelable:true}));return true;''', [kind, x, y])
+    for kind in ['isolation-valve', 'check-valve']:
+        load(valve_fixture)
+        roundtrip(lambda kind=kind: drop_kind(kind, 500, 400), f'insert {kind} into horizontal pipe')
+        drawing = state()
+        assert len(drawing['nodes']) == 3 and len(drawing['pipes']) == 2
+        assert {p['id'] for p in drawing['nodes'][-1]['ports']} == {'L', 'R'}
+        assert all(p['color'] == 'red' and p['direction'] == 'forward' for p in drawing['pipes'])
+    vertical_fixture = dict(valve_fixture, nodes=[
+        dict(id='n0', kind='junction', x=500, y=150, w=44, h=44, tag='', notes='', ports=junction_ports),
+        dict(id='n1', kind='junction', x=500, y=750, w=44, h=44, tag='', notes='', ports=junction_ports),
+    ], pipes=[dict(id='n2', a=dict(node='n0', port='B'), b=dict(node='n1', port='T'), direction='reverse')])
+    load(vertical_fixture)
+    roundtrip(lambda: drop_kind('check-valve', 500, 450), 'insert check valve into reverse-flow vertical pipe')
+    assert state()['nodes'][-1]['rotation'] == 270
+    assert len(state()['pipes']) == 2
+    elbow_fixture = dict(title='L route', nodes=[
+        dict(id='n0', kind='junction', x=200, y=200, w=44, h=44, tag='', notes='', ports=junction_ports),
+        dict(id='n1', kind='junction', x=800, y=600, w=44, h=44, tag='', notes='', ports=junction_ports),
+    ], pipes=[dict(id='n2', a=dict(node='n0', port='R'), b=dict(node='n1', port='L'))], nextId=3, sealSvg=None, portModeVersion=3)
+    load(elbow_fixture)
+    def select_elbow_pipe():
+        b.js("document.querySelector('[data-pipe]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true")
+    def pipe_path():
+        return b.js("return document.querySelector('#pipes .wire:not(.hit)').getAttribute('d')")
+    select_elbow_pipe()
+    roundtrip(lambda: click('routeElbowHorizontal'), 'L route horizontal then vertical')
+    assert state()['pipes'][0]['route'] == {'elbow': 'horizontal'}
+    assert pipe_path() == 'M 222 200 L 778 200 L 778 600'
+    select_elbow_pipe()
+    assert b.js("return document.querySelectorAll('.elbow-handle').length") == 1
+    roundtrip(lambda: click('routeElbowVertical'), 'L route vertical then horizontal')
+    assert pipe_path() == 'M 222 200 L 222 600 L 778 600'
+    select_elbow_pipe()
+    def flip_elbow():
+        b.js("document.querySelector('.elbow-handle circle').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true")
+    roundtrip(flip_elbow, 'flip L corner from canvas')
+    assert pipe_path() == 'M 222 200 L 778 200 L 778 600'
+    before_elbow_move = state()
+    drag_symbol(250, 250)
+    assert state()['pipes'][0]['route'] == {'elbow': 'horizontal'}
+    assert pipe_path() == 'M 272 250 L 778 250 L 778 600'
+    click('undo')
+    assert state() == before_elbow_move
+    exported_elbow = b.async_js('''const done=arguments[arguments.length-1],original=URL.createObjectURL;URL.createObjectURL=function(blob){blob.text().then(markup=>{const doc=new DOMParser().parseFromString(markup,'image/svg+xml');done([doc.querySelector('#pipes .wire').getAttribute('d'),doc.querySelectorAll('.elbow-handle').length])});return original.call(this,blob)};document.getElementById('exportSVG').click();URL.createObjectURL=original;''')
+    assert exported_elbow == [pipe_path(), 0]
+    group_fixture = dict(title='Group edits', nodes=[
+        dict(id='n0', kind='junction', x=200, y=220, w=44, h=44, tag='J1', notes='', ports=junction_ports),
+        dict(id='n1', kind='PI', x=400, y=400, w=90, h=90, tag='PI1', notes='', ports=[dict(id='L', x=-45, y=0), dict(id='R', x=45, y=0)]),
+        dict(id='n2', kind='junction', x=800, y=550, w=44, h=44, tag='J2', notes='', ports=junction_ports),
+    ], pipes=[
+        dict(id='n3', a=dict(node='n0', port='R'), b=dict(node='n1', port='L'), route=dict(axis='x', value=300), lineNumber='L-101', lineService='Seal flush'),
+        dict(id='n4', a=dict(node='n1', port='R'), b=dict(node='n2', port='L'), route=dict(waypoints=[dict(x=600, y=350)])),
+    ], nextId=5, sealSvg=None, portModeVersion=3)
+    load(group_fixture)
+    def shift_select(index):
+        b.js('''const n=document.querySelectorAll('#nodes>.node')[arguments[0]],p=new DOMPoint(0,0).matrixTransform(n.getScreenCTM());n.querySelector('.symbol-artwork').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,shiftKey:true,clientX:p.x,clientY:p.y}));return true;''', [index])
+    def select_pair():
+        select(0)
+        shift_select(1)
+    select_pair()
+    assert b.js("return document.querySelectorAll('#nodes>.node.selected').length") == 2
+    assert b.js("return document.querySelector('#properties .info').textContent.includes('2 symbols selected')")
+    roundtrip(lambda: b.js("document.querySelector('[data-align=\"x:start\"]').click();return true"), 'align group left edges')
+    assert state()['nodes'][1]['x'] == 223
+    select_pair()
+    def move_group():
+        b.js('''const n=document.querySelector('#nodes>.node'),svg=document.getElementById('drawing'),from=new DOMPoint(0,0).matrixTransform(n.getScreenCTM()),to=new DOMPoint(300,300).matrixTransform(svg.getScreenCTM());n.querySelector('.symbol-artwork').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:from.x,clientY:from.y}));for(let i=1;i<=4;i++)window.dispatchEvent(new PointerEvent('pointermove',{clientX:from.x+(to.x-from.x)*i/4,clientY:from.y+(to.y-from.y)*i/4}));window.dispatchEvent(new PointerEvent('pointerup'));return true;''')
+    roundtrip(move_group, 'move selected symbols as one edit')
+    assert [(n['x'], n['y']) for n in state()['nodes']] == [(300, 300), (323, 480), (800, 550)]
+    assert state()['pipes'][0]['route']['value'] == 400
+    select_pair()
+    roundtrip(lambda: b.js("document.querySelector('[data-align=\"y:center\"]').click();return true"), 'align group vertical centers')
+    assert state()['nodes'][1]['y'] == 300
+    select_pair()
+    roundtrip(lambda: click('duplicateGroup'), 'duplicate group with internal pipes')
+    copied = state()
+    assert len(copied['nodes']) == 5 and len(copied['pipes']) == 3
+    assert [(n['x'], n['y']) for n in copied['nodes'][-2:]] == [(345, 345), (368, 345)]
+    assert copied['pipes'][-1]['a']['node'] == copied['nodes'][-2]['id']
+    assert copied['pipes'][-1]['b']['node'] == copied['nodes'][-1]['id']
+    assert copied['pipes'][-1]['route']['value'] == copied['pipes'][0]['route']['value'] + 45
+    assert copied['pipes'][-1]['lineId'] != copied['pipes'][0]['id']
+    assert copied['pipes'][-1]['lineNumber'] == 'L-101' and copied['pipes'][-1]['lineService'] == 'Seal flush'
+    load(group_fixture)
+    select(1)
+    shift_select(2)
+    roundtrip(lambda: click('duplicateGroup'), 'duplicate group with pipe waypoints')
+    assert state()['pipes'][-1]['route']['waypoints'] == [dict(x=645, y=395)]
+    load(group_fixture)
+    select_pair()
+    roundtrip(lambda: click('deleteSelected'), 'delete group and attached pipes')
+    assert [n['id'] for n in state()['nodes']] == ['n2'] and not state()['pipes']
+    load(group_fixture)
+    b.js("window.dispatchEvent(new KeyboardEvent('keydown',{key:'a',ctrlKey:true,bubbles:true,cancelable:true}));return true")
+    assert b.js("return document.querySelectorAll('#nodes>.node.selected').length") == 3
+    shift_select(1)
+    assert b.js("return document.querySelectorAll('#nodes>.node.selected').length") == 2
+    line_fixture = dict(title='Line data', nodes=[
+        dict(id='n0', kind='junction', x=200, y=400, w=44, h=44, tag='J1', notes='', ports=junction_ports),
+        dict(id='n1', kind='junction', x=800, y=400, w=44, h=44, tag='J2', notes='', ports=junction_ports),
+    ], pipes=[dict(id='n2', lineId='n2', a=dict(node='n0', port='R'), b=dict(node='n1', port='L'))], nextId=3, sealSvg=None, portModeVersion=3)
+    load(line_fixture)
+    def select_line():
+        b.js("document.querySelector('[data-pipe]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true")
+    select_line()
+    roundtrip(lambda: edit('lineNumberEdit', ['L', 'L-1', 'L-101']), 'line number typing grouped into one edit')
+    assert state()['pipes'][0]['lineNumber'] == 'L-101'
+    assert b.js("return document.querySelector('#pipes .line-label').textContent") == 'L-101'
+    for field, value in [('lineServiceEdit', 'Seal flush'), ('lineSizeEdit', 'DN25'), ('lineSpecEdit', 'SS-01')]:
+        select_line()
+        roundtrip(lambda field=field, value=value: edit(field, [value]), f'edit {field}')
+    exported_line = b.async_js('''const done=arguments[arguments.length-1],original=URL.createObjectURL;URL.createObjectURL=function(blob){blob.text().then(markup=>{const doc=new DOMParser().parseFromString(markup,'image/svg+xml');done([doc.querySelector('#pipes .line-label')?.textContent,doc.querySelectorAll('#pipes .port').length])});return original.call(this,blob)};document.getElementById('exportSVG').click();URL.createObjectURL=original;''')
+    assert exported_line == ['L-101', 0]
+    roundtrip(lambda: drop_kind('isolation-valve', 500, 400), 'split line with data')
+    assert len(state()['pipes']) == 2
+    assert all(p['lineId'] == 'n2' and p['lineNumber'] == 'L-101' and p['lineService'] == 'Seal flush' and p['lineSize'] == 'DN25' and p['lineSpec'] == 'SS-01' for p in state()['pipes'])
+    select_line()
+    roundtrip(lambda: edit('lineSpecEdit', ['SS-02']), 'edit data across split line')
+    assert all(p['lineSpec'] == 'SS-02' for p in state()['pipes'])
+    assert b.js("return document.querySelectorAll('#pipes .line-label').length") == 2
+    before_line_reload = state()
+    b.call('WebDriver:Navigate', {'url': url})
+    assert state() == before_line_reload
+    load(empty_project)
     click('snapGrid')
     assert b.js("return document.getElementById('snapGrid').getAttribute('aria-pressed')") == 'true'
     assert b.js("return document.getElementById('undo').disabled")
