@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Test undo/redo through Firefox using Marionette; no Python dependencies.
+"""Browser regression tests, run through Firefox using Marionette; no Python dependencies.
+
+Covers undo/redo, saved-project compatibility, and the editing tools.
 
 Run directly to start a temporary headless Firefox, or pass --port to use an
 existing Firefox started with --headless --marionette and a temporary profile.
@@ -78,6 +80,10 @@ def run_tests(browser):
     def add(kind):
         b.js('document.querySelector(`[data-kind="${arguments[0]}"]`).click();return true', [kind])
 
+    def near(node, x, y):
+        # Pointer events carry whole pixels, so free placement is exact only to about one drawing unit.
+        return abs(node['x'] - x) <= 1 and abs(node['y'] - y) <= 1
+
     def roundtrip(action, label):
         before = state()
         action()
@@ -143,6 +149,11 @@ def run_tests(browser):
         roundtrip(lambda kind=kind: add(kind), f'add {kind}')
         assert state()['nodes'][0]['kind'] == kind and state()['nodes'][0]['ports'] == []
         assert b.js("return document.querySelector('#nodes .symbol-artwork').children.length > 0")
+    load(empty_project)
+    assert b.js("return document.querySelector('[data-kind=control-valve]').textContent.includes('Pressure control valve')")
+    roundtrip(lambda: add('control-valve'), 'add redesigned pressure control valve')
+    assert state()['nodes'][0]['ports'] == []
+    assert b.js("return atob(document.querySelector('#nodes .symbol-artwork image').getAttribute('href').split(',')[1]).includes('Dome-loaded pressure control valve')")
     valve_fixture = dict(title='Valve insertion', nodes=[
         dict(id='n0', kind='junction', x=200, y=400, w=44, h=44, tag='', notes='', ports=junction_ports),
         dict(id='n1', kind='junction', x=800, y=400, w=44, h=44, tag='', notes='', ports=junction_ports),
@@ -283,7 +294,7 @@ def run_tests(browser):
     drag_symbol(242, 263)
     assert (state()['nodes'][0]['x'], state()['nodes'][0]['y']) == (250, 275)
     drag_symbol(237, 258, True)
-    assert (state()['nodes'][0]['x'], state()['nodes'][0]['y']) == (237, 258)
+    assert near(state()['nodes'][0], 237, 258)
     click('duplicateSelected')
     assert (state()['nodes'][1]['x'], state()['nodes'][1]['y']) == (275, 300)
     ports = [dict(id='L', x=-22, y=0), dict(id='R', x=22, y=0), dict(id='T', x=0, y=-22), dict(id='B', x=0, y=22)]
@@ -300,12 +311,12 @@ def run_tests(browser):
     assert len(state()['pipes']) == 2 and len(state()['nodes'][-1]['ports']) == 4
     load(empty_project)
     drop_symbol(123, 137, True)
-    assert (state()['nodes'][0]['x'], state()['nodes'][0]['y']) == (123, 137)
+    assert near(state()['nodes'][0], 123, 137)
     load(empty_project)
     click('snapGrid')
     assert b.js("return document.getElementById('snapGrid').getAttribute('aria-pressed')") == 'false'
     drop_symbol(123, 137)
-    assert (state()['nodes'][0]['x'], state()['nodes'][0]['y']) == (123, 137)
+    assert near(state()['nodes'][0], 123, 137)
     load(empty_project)
     print('PASS: optional 25-unit symbol snapping, Alt bypass, and saved preference', flush=True)
     add('circulating-pump')
@@ -511,9 +522,219 @@ def run_tests(browser):
     print('PASS: reload / new / open history reset, autosave, and 100-edit history limit')
 
 
+def run_editing_tests(browser):
+    """Pipe tool, automatic routing, area selection, and keyboard editing."""
+    b = browser
+    url = (ROOT / 'PID-Builder.html').as_uri()
+    b.call('WebDriver:Navigate', {'url': url})
+    b.js('localStorage.clear();return true')
+    b.call('WebDriver:Navigate', {'url': url})
+
+    def state():
+        return b.js(f"return JSON.parse(localStorage.getItem('{STORAGE}'))")
+
+    def load(project):
+        b.async_js("""const done=arguments[arguments.length-1],input=document.getElementById('projectFile'),dt=new DataTransfer();dt.items.add(new File([JSON.stringify(arguments[0])],'test.json',{type:'application/json'}));input.files=dt.files;input.onchange({target:input}).then(()=>done(true));""", [project])
+
+    def click(element_id):
+        b.js('document.getElementById(arguments[0]).click();return true', [element_id])
+
+    def key(name, **modifiers):
+        b.js('window.dispatchEvent(new KeyboardEvent("keydown",Object.assign({key:arguments[0],bubbles:true,cancelable:true},arguments[1])));return true', [name, modifiers])
+
+    # Dispatches real pointer gestures at drawing coordinates, on whatever element is there.
+    POINTER = """const svg=document.getElementById('drawing'),at=(x,y)=>new DOMPoint(x,y).matrixTransform(svg.getScreenCTM());
+        const fire=(type,x,y,target,extra)=>{const p=at(x,y);(target||document.elementFromPoint(p.x,p.y)).dispatchEvent(new PointerEvent(type,Object.assign({bubbles:true,clientX:p.x,clientY:p.y},extra||{})))};"""
+
+    def press(x, y, **modifiers):
+        b.js(POINTER + "fire('pointerdown',arguments[0],arguments[1],null,arguments[2]);fire('pointerup',arguments[0],arguments[1],window);return true", [x, y, modifiers])
+
+    def drag(x1, y1, x2, y2, **modifiers):
+        b.js(POINTER + """fire('pointerdown',arguments[0],arguments[1],null,arguments[4]);fire('pointermove',(arguments[0]+arguments[2])/2,(arguments[1]+arguments[3])/2,window,arguments[4]);
+            fire('pointermove',arguments[2],arguments[3],window,arguments[4]);fire('pointerup',arguments[2],arguments[3],window);return true""", [x1, y1, x2, y2, modifiers])
+
+    def wire_points(index=0):
+        return b.js("""const d=document.querySelectorAll('#pipes .wire:not(.hit)')[arguments[0]].getAttribute('d').match(/-?\\d+(?:\\.\\d+)?/g).map(Number),points=[];
+            for(let i=0;i<d.length;i+=2)points.push([d[i],d[i+1]]);return points""", [index])
+
+    def crosses(points, left, top, right, bottom):
+        for (x1, y1), (x2, y2) in zip(points, points[1:]):
+            if max(x1, x2) > left and min(x1, x2) < right and max(y1, y2) > top and min(y1, y2) < bottom:
+                return True
+        return False
+
+    def tanks():
+        return dict(title='Pipe tool', nodes=[
+            dict(id='n0', kind='nitrogen', x=300, y=450, w=170, h=215, tag='A', notes='', ports=[]),
+            dict(id='n1', kind='nitrogen', x=1100, y=450, w=170, h=215, tag='B', notes='', ports=[]),
+        ], pipes=[], nextId=2, sealSvg=None, portModeVersion=3)
+
+    load(tanks())
+    click('toolPipe')
+    press(380, 450)
+    assert len(state()['nodes'][0]['ports']) == 1 and not state()['pipes']
+    press(1020, 450)
+    drawing = state()
+    assert len(drawing['pipes']) == 1 and len(drawing['nodes'][1]['ports']) == 1
+    assert drawing['pipes'][0]['a'] == dict(node='n0', port='P1') and drawing['pipes'][0]['b'] == dict(node='n1', port='P1')
+    assert b.js("return document.getElementById('toolPipe').getAttribute('aria-pressed')") == 'true'
+    click('undo')
+    assert not state()['pipes'] and not state()['nodes'][1]['ports'] and len(state()['nodes'][0]['ports']) == 1
+    click('redo')
+    assert state() == drawing
+    key('Escape')
+    assert b.js("return document.getElementById('toolSelect').getAttribute('aria-pressed')") == 'true'
+    print('PASS: pipe tool creates ports and a pipe from two clicks', flush=True)
+
+    # Pressing an existing port and releasing over another symbol connects in one gesture.
+    load(dict(tanks(), nodes=[dict(tanks()['nodes'][0], ports=[dict(id='P1', x=85, y=0, custom=True)]), tanks()['nodes'][1]]))
+    drag(385, 450, 1060, 480)
+    assert len(state()['pipes']) == 1 and len(state()['nodes'][1]['ports']) == 1
+    # A plain click on a port still leaves the connection pending for a second click.
+    load(dict(tanks(), nodes=[dict(tanks()['nodes'][0], ports=[dict(id='P1', x=85, y=0, custom=True)]), dict(tanks()['nodes'][1], ports=[dict(id='P1', x=-85, y=0, custom=True)])]))
+    press(385, 450)
+    assert not state()['pipes'] and b.js("return !!document.querySelector('.port.pending')")
+    press(1015, 450)
+    assert len(state()['pipes']) == 1 and all(len(n['ports']) == 1 for n in state()['nodes'])
+    print('PASS: drag from a port to a symbol, and click-click between ports', flush=True)
+
+    # Clicking a pipe with the pipe tool tees into it with a junction, at either end of the new pipe.
+    def tee_fixture():
+        return dict(title='Tee', nodes=[
+            dict(id='n0', kind='nitrogen', x=200, y=300, w=170, h=215, tag='A', notes='', ports=[dict(id='P1', x=85, y=0, custom=True)]),
+            dict(id='n1', kind='nitrogen', x=1200, y=300, w=170, h=215, tag='B', notes='', ports=[dict(id='P1', x=-85, y=0, custom=True)]),
+            dict(id='n2', kind='nitrogen', x=700, y=700, w=170, h=215, tag='C', notes='', ports=[]),
+        ], pipes=[dict(id='n3', lineId='n3', a=dict(node='n0', port='P1'), b=dict(node='n1', port='P1'), color='red', lineNumber='L-1')], nextId=4, sealSvg=None, portModeVersion=3)
+    load(tee_fixture())
+    click('toolPipe')
+    press(700, 300)
+    drawing = state()
+    junction = drawing['nodes'][-1]
+    assert junction['kind'] == 'junction' and (junction['x'], junction['y']) == (700, 300) and len(drawing['pipes']) == 2
+    assert all(p['color'] == 'red' and p['lineNumber'] == 'L-1' and p['lineId'] == 'n3' for p in drawing['pipes'])
+    press(700, 620)
+    drawing = state()
+    assert len(drawing['pipes']) == 3 and drawing['pipes'][-1]['a'] == dict(node=junction['id'], port='B')
+    assert drawing['pipes'][-1]['b']['node'] == 'n2' and 'branch' not in drawing['pipes'][-1]['a']
+    arms = b.js("return document.querySelector(`[data-node='${arguments[0]}'] .symbol-artwork path`).getAttribute('d')", [junction['id']])
+    assert 'V 22' in arms and 'V -22' not in arms and 'H 22' in arms and 'H -22' in arms
+    click('undo')
+    assert len(state()['pipes']) == 2 and len(state()['nodes']) == 4
+    click('undo')
+    assert len(state()['pipes']) == 1 and len(state()['nodes']) == 3
+    # Ending on a pipe: one undo step for the junction and the new pipe together.
+    key('Escape')
+    load(dict(tee_fixture(), nodes=[tee_fixture()['nodes'][0], tee_fixture()['nodes'][1], dict(tee_fixture()['nodes'][2], y=-100)]))
+    before = state()
+    click('toolPipe')
+    press(700, -20)
+    started = state()
+    press(900, 300)
+    drawing = state()
+    junction = drawing['nodes'][-1]
+    assert len(drawing['pipes']) == 3 and (junction['x'], junction['y']) == (900, 300)
+    assert drawing['pipes'][-1]['b'] == dict(node=junction['id'], port='T')
+    click('undo')
+    assert state() == started
+    # A second branch from the same junction takes its remaining free side.
+    click('redo')
+    press(900, 300)
+    press(1200, 395)
+    key('Escape')
+    assert len(state()['pipes']) == 4 and state()['pipes'][-1]['a'] == dict(node=junction['id'], port='B')
+    assert state()['pipes'][-1]['b']['node'] == 'n1'
+    # Too short a run to hold a junction leaves the drawing alone.
+    load(dict(tee_fixture(), nodes=[tee_fixture()['nodes'][0], dict(tee_fixture()['nodes'][1], x=420), tee_fixture()['nodes'][2]]))
+    before = state()
+    click('toolPipe')
+    press(310, 300)
+    assert state() == before
+    key('Escape')
+    print('PASS: pipe tool tees into an existing pipe at either end', flush=True)
+
+    # Automatic routes leave ports outward and go around symbols in the way.
+    obstacle = dict(title='Routing', nodes=[
+        dict(id='n0', kind='nitrogen', x=300, y=450, w=170, h=215, tag='A', notes='', ports=[dict(id='P1', x=85, y=0, custom=True)]),
+        dict(id='n1', kind='nitrogen', x=1100, y=450, w=170, h=215, tag='B', notes='', ports=[dict(id='P1', x=-85, y=0, custom=True)]),
+        dict(id='n2', kind='cooler', x=700, y=450, w=190, h=150, tag='IN THE WAY', notes='', ports=[]),
+    ], pipes=[dict(id='n3', lineId='n3', a=dict(node='n0', port='P1'), b=dict(node='n1', port='P1'))], nextId=4, sealSvg=None, portModeVersion=3)
+    load(obstacle)
+    points = wire_points()
+    assert points[0] == [385, 450] and points[-1] == [1015, 450]
+    assert all(x1 == x2 or y1 == y2 for (x1, y1), (x2, y2) in zip(points, points[1:]))
+    assert not crosses(points, 605, 375, 795, 525), points
+    assert points[1][0] > points[0][0] and points[-2][0] < points[-1][0]
+    # A port facing away from its target leaves outward first and goes around its own symbol.
+    away = dict(obstacle, nodes=[dict(obstacle['nodes'][0], ports=[dict(id='P1', x=-85, y=0, custom=True)]), obstacle['nodes'][1]])
+    load(away)
+    points = wire_points()
+    assert points[1][0] < points[0][0], points
+    assert not crosses(points, 217, 345, 383, 555), points
+    # An explicit route is kept until Automatic is chosen again.
+    load(dict(obstacle, pipes=[dict(obstacle['pipes'][0], route=dict(axis='x', value=500))]))
+    assert crosses(wire_points(), 605, 375, 795, 525)
+    b.js(POINTER + "fire('pointerdown',450,450,document.querySelector('[data-pipe]'));fire('pointerup',450,450,window);return true")
+    click('routeAuto')
+    assert 'route' not in state()['pipes'][0] and not crosses(wire_points(), 605, 375, 795, 525)
+    click('undo')
+    assert state()['pipes'][0]['route'] == dict(axis='x', value=500)
+    print('PASS: automatic routes avoid symbols and respect port sides', flush=True)
+
+    # Dragging a corner of an automatic route freezes its bends as waypoints.
+    load(obstacle)
+    b.js(POINTER + "fire('pointerdown',450,450,document.querySelector('[data-pipe]'));fire('pointerup',450,450,window);return true")
+    corners = b.js("return document.querySelectorAll('[data-auto-corner]').length")
+    assert corners >= 2
+    b.js(POINTER + """const handle=document.querySelector('[data-auto-corner="0"] circle'),x=+handle.getAttribute('cx'),y=+handle.getAttribute('cy');
+        fire('pointerdown',x,y,handle);fire('pointermove',x+40,y,window);fire('pointerup',x+40,y,window);return true""")
+    assert len(state()['pipes'][0]['route']['waypoints']) == corners
+    click('undo')
+    assert 'route' not in state()['pipes'][0]
+    print('PASS: dragging an automatic corner converts the route to waypoints', flush=True)
+
+    # Shift-drag on blank sheet selects every symbol the rectangle touches.
+    load(obstacle)
+    before = state()
+    drag(150, 250, 800, 650, shiftKey=True)
+    assert b.js("return [...document.querySelectorAll('.node.selected')].map(n=>n.dataset.node)") == ['n0', 'n2']
+    assert state() == before and b.js("return document.getElementById('undo').disabled")
+    # Arrow keys nudge the selection; a run of nudges is one undo step.
+    for _ in range(3):
+        key('ArrowRight')
+    key('ArrowDown', shiftKey=True)
+    moved = state()
+    assert [(n['x'], n['y']) for n in moved['nodes']] == [(303, 475), (1100, 450), (703, 475)]
+    click('undo')
+    assert state() == before
+    click('redo')
+    assert state() == moved
+    drag(150, 250, 800, 650, shiftKey=True)
+    key('d', ctrlKey=True)
+    assert len(state()['nodes']) == 5
+    key('Escape')
+    press(300, 450)
+    key('r')
+    assert [n.get('rotation') for n in state()['nodes']].count(90) == 1
+    print('PASS: area selection, arrow-key nudging, Ctrl+D, and R to rotate', flush=True)
+
+    # Zoom to fit shows the whole drawing; the default swatch clears a line colour.
+    far = dict(obstacle, nodes=[obstacle['nodes'][0], dict(obstacle['nodes'][1], x=3200, y=1900), obstacle['nodes'][2]])
+    load(far)
+    click('zoomFit')
+    x, y, w, h = b.js("return document.getElementById('drawing').getAttribute('viewBox').split(' ').map(Number)")
+    assert x < 215 and y < 342 and x + w > 3285 and y + h > 2008
+    b.js(POINTER + "const wire=document.querySelector('[data-pipe]');wire.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));fire('pointerup',0,0,window);return true")
+    b.js("document.querySelector('[data-pipe-color=red]').click();return true")
+    assert state()['pipes'][0]['color'] == 'red'
+    b.js("document.querySelector('[data-pipe-color=default]').click();return true")
+    assert 'color' not in state()['pipes'][0]
+    print('PASS: zoom to fit and default line colour', flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, help='Connect to an existing temporary Firefox')
+    parser.add_argument('--only-editing', action='store_true', help='Skip the undo/redo suite and run only the editing-tool tests')
     args = parser.parse_args()
     process = None
     b = None
@@ -541,7 +762,9 @@ def main():
                     time.sleep(.2)
             b.call('WebDriver:NewSession')
             b.call('WebDriver:SetWindowRect', {'width': 1440, 'height': 1000})
-            run_tests(b)
+            if not args.only_editing:
+                run_tests(b)
+            run_editing_tests(b)
         finally:
             if b:
                 try:

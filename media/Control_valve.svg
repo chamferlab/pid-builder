@@ -1,57 +1,12 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
-   version="1.1"
-   id="svg1"
-   xml:space="preserve"
-   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
-   sodipodi:docname="Control_valve.svg"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
-     id="namedview1"
-     pagecolor="#ffffff"
-     bordercolor="#cccccc"
-     borderopacity="1"
-     inkscape:showpageshadow="0"
-     inkscape:pageopacity="1"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm"
-     inkscape:zoom="0.94252245"
-     inkscape:cx="357.02067"
-     inkscape:cy="595.74178"
-     inkscape:window-width="1276"
-     inkscape:window-height="1365"
-     inkscape:window-x="20"
-     inkscape:window-y="20"
-     inkscape:window-maximized="0"
-     inkscape:current-layer="layer1" /><defs
-     id="defs1" /><g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1" /><g
-     inkscape:groupmode="layer"
-     id="layer2"
-     inkscape:label="Layer 2"><path
-       id="path1"
-       style="fill:#e6e6e6;stroke:#000000;stroke-width:1.56604"
-       inkscape:transform-center-x="-3.1464708"
-       d="m 97.717501,149.96178 c -8.968451,3.95244 -18.127694,7.41397 -27.282805,10.8997 v -21.7994 c 9.0743,3.68325 18.180126,7.28742 27.282805,10.8997 z"
-       sodipodi:nodetypes="cccc" /><path
-       id="path2"
-       style="fill:#e6e6e6;stroke:#000000;stroke-width:1.56604"
-       inkscape:transform-center-x="3.1464716"
-       d="m 98.65771,149.96178 c 8.96844,3.95244 18.12769,7.41397 27.2828,10.8997 v -21.7994 c -9.0743,3.68325 -18.18012,7.28742 -27.2828,10.8997 z"
-       sodipodi:nodetypes="cccc" /><path
-       style="fill:#e6e6e6;stroke:#000000;stroke-width:1.7908"
-       d="M 98.108279,149.96178 V 129.58641"
-       id="path3" /><path
-       id="path4"
-       style="fill:#e6e6e6;stroke:#000000;stroke-width:1.66637"
-       d="m 98.108353,117.66738 a 10.271886,10.271886 0 0 0 -10.27198,10.2716 10.271886,10.271886 0 0 0 0.132803,1.64743 h 20.277974 a 10.271886,10.271886 0 0 0 0.13318,-1.64743 10.271886,10.271886 0 0 0 -10.271977,-10.2716 z" /></g></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="76" height="59" viewBox="60.2243 104.0295 75.9266 58.832">
+  <title>Dome-loaded pressure control valve</title>
+  <g fill="none" stroke="#253d51" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 62.2243 149.96 H 77 M 119.4 149.96 H 134.1509"/>
+    <path d="M 77 140 L 98.2 149.96 L 77 159.92 Z" fill="#fff"/>
+    <path d="M 119.4 140 L 98.2 149.96 L 119.4 159.92 Z" fill="#fff"/>
+    <path d="M 98.2 149.96 V 130"/>
+    <path d="M 86 130 V 121 C 86 114.5 91.5 109.5 98.2 109.5 C 104.9 109.5 110.4 114.5 110.4 121 V 130 Z" fill="#e7f5f5"/>
+    <path d="M 86 130 H 110.4 M 98.2 106.0295 V 109.5"/>
+  </g>
+</svg>
