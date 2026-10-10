@@ -1,0 +1,458 @@
+{
+  "type": "seal-loop-pid-templates",
+  "version": 1,
+  "templates": [
+    {
+      "id": "tmv2kzocfc6q2",
+      "name": "Plan 53B",
+      "nodes": [
+        {
+          "id": "n141",
+          "kind": "seal",
+          "x": -273,
+          "y": -16,
+          "tag": "BACK-TO-BACK · WO PLUG",
+          "notes": "",
+          "ports": [
+            {
+              "id": "P1",
+              "x": 115,
+              "y": -141,
+              "custom": true
+            },
+            {
+              "id": "P3",
+              "x": 141,
+              "y": 143,
+              "custom": true
+            }
+          ],
+          "w": 454.99999999999994,
+          "h": 341.6146375241916,
+          "sealVariant": "dual-seal-bb-wo-plug",
+          "artworkSource": "media"
+        },
+        {
+          "id": "n143",
+          "kind": "cooler",
+          "x": 171,
+          "y": -88,
+          "tag": "COOLER",
+          "notes": "",
+          "ports": [
+            {
+              "id": "P1",
+              "x": 0,
+              "y": -100
+            },
+            {
+              "id": "P2",
+              "x": 0,
+              "y": 100
+            },
+            {
+              "id": "P3",
+              "x": -65,
+              "y": 40
+            },
+            {
+              "id": "P4",
+              "x": 65,
+              "y": -40
+            }
+          ],
+          "w": 130,
+          "h": 200,
+          "artworkSource": "media",
+          "artworkVersion": "6507aad1c345"
+        },
+        {
+          "id": "n145",
+          "kind": "junction",
+          "x": -6.24750246045005,
+          "y": 387,
+          "tag": "",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -22,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 22,
+              "y": 0
+            },
+            {
+              "id": "T",
+              "x": 0,
+              "y": -22
+            },
+            {
+              "id": "B",
+              "x": 0,
+              "y": 22
+            }
+          ],
+          "w": 44,
+          "h": 44,
+          "rotation": 0,
+          "orientation": "horizontal"
+        },
+        {
+          "id": "n146",
+          "kind": "isolation-valve",
+          "x": 362,
+          "y": 282,
+          "tag": "",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -48,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 48,
+              "y": 0
+            }
+          ],
+          "w": 96,
+          "h": 80,
+          "rotation": 90,
+          "orientation": "vertical"
+        },
+        {
+          "id": "n147",
+          "kind": "accumulator",
+          "x": 362,
+          "y": 86,
+          "tag": "ACCUMULATOR",
+          "notes": "",
+          "ports": [
+            {
+              "id": "P1",
+              "x": 0,
+              "y": 100
+            }
+          ],
+          "w": 80,
+          "h": 200,
+          "artworkSource": "media",
+          "artworkVersion": "a8f2ac565d46"
+        },
+        {
+          "id": "n158",
+          "kind": "check-valve",
+          "x": 471,
+          "y": 387,
+          "w": 96,
+          "h": 80,
+          "tag": "CHECK VALVE",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -48,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 48,
+              "y": 0
+            }
+          ],
+          "mirrorX": true,
+          "scale": 0.5
+        },
+        {
+          "id": "n159",
+          "kind": "junction",
+          "x": 171,
+          "y": 387,
+          "w": 44,
+          "h": 44,
+          "tag": "",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -22,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 22,
+              "y": 0
+            },
+            {
+              "id": "T",
+              "x": 0,
+              "y": -22
+            },
+            {
+              "id": "B",
+              "x": 0,
+              "y": 22
+            }
+          ]
+        },
+        {
+          "id": "n165",
+          "kind": "TI",
+          "x": -6.24750246045005,
+          "y": 297.3225791454315,
+          "w": 90,
+          "h": 90,
+          "tag": "TI",
+          "notes": "",
+          "ports": [
+            {
+              "id": "T",
+              "x": 0,
+              "y": -45
+            },
+            {
+              "id": "B",
+              "x": 0,
+              "y": 45
+            }
+          ],
+          "number": "103",
+          "rotation": 0,
+          "orientation": "vertical"
+        },
+        {
+          "id": "n168",
+          "kind": "junction",
+          "x": 362,
+          "y": 387,
+          "w": 44,
+          "h": 44,
+          "tag": "",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -22,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 22,
+              "y": 0
+            },
+            {
+              "id": "T",
+              "x": 0,
+              "y": -22
+            },
+            {
+              "id": "B",
+              "x": 0,
+              "y": 22
+            }
+          ],
+          "rotation": 0,
+          "orientation": "horizontal"
+        },
+        {
+          "id": "n171",
+          "kind": "PI",
+          "x": -29,
+          "y": -363,
+          "w": 90,
+          "h": 90,
+          "tag": "PI",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -45,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 45,
+              "y": 0
+            }
+          ],
+          "number": "101",
+          "rotation": 0,
+          "orientation": "horizontal"
+        }
+      ],
+      "pipes": [
+        {
+          "id": "n149",
+          "lineId": "n149",
+          "a": {
+            "node": "n141",
+            "port": "P1"
+          },
+          "b": {
+            "node": "n171",
+            "port": "L"
+          },
+          "direction": "forward",
+          "color": "red",
+          "route": {
+            "waypoints": [
+              {
+                "x": -158,
+                "y": -363
+              }
+            ]
+          }
+        },
+        {
+          "id": "n172",
+          "lineId": "n150",
+          "a": {
+            "node": "n171",
+            "port": "R"
+          },
+          "b": {
+            "node": "n143",
+            "port": "P1"
+          },
+          "direction": "forward",
+          "color": "red",
+          "route": {
+            "waypoints": [
+              {
+                "x": 104,
+                "y": -363
+              }
+            ]
+          }
+        },
+        {
+          "id": "n155",
+          "lineId": "n155",
+          "a": {
+            "node": "n146",
+            "port": "L"
+          },
+          "b": {
+            "node": "n147",
+            "port": "P1"
+          },
+          "color": "blue"
+        },
+        {
+          "id": "n160",
+          "lineId": "n160",
+          "a": {
+            "node": "n143",
+            "port": "P2"
+          },
+          "b": {
+            "node": "n159",
+            "port": "T"
+          },
+          "color": "blue"
+        },
+        {
+          "id": "n161",
+          "lineId": "n161",
+          "a": {
+            "node": "n159",
+            "port": "L"
+          },
+          "b": {
+            "node": "n145",
+            "port": "R"
+          },
+          "route": {
+            "waypoints": []
+          },
+          "color": "blue"
+        },
+        {
+          "id": "n162",
+          "lineId": "n161",
+          "a": {
+            "node": "n145",
+            "port": "L"
+          },
+          "b": {
+            "node": "n141",
+            "port": "P3"
+          },
+          "route": {
+            "waypoints": [
+              {
+                "x": -132,
+                "y": 387
+              }
+            ]
+          },
+          "color": "blue"
+        },
+        {
+          "id": "n164",
+          "lineId": "n164",
+          "a": {
+            "node": "n145",
+            "port": "T"
+          },
+          "b": {
+            "node": "n165",
+            "port": "B"
+          },
+          "route": {
+            "waypoints": []
+          }
+        },
+        {
+          "id": "n167",
+          "lineId": "n167",
+          "a": {
+            "node": "n159",
+            "port": "R"
+          },
+          "b": {
+            "node": "n168",
+            "port": "L"
+          },
+          "route": {
+            "waypoints": []
+          },
+          "color": "blue"
+        },
+        {
+          "id": "n169",
+          "lineId": "n167",
+          "a": {
+            "node": "n168",
+            "port": "R"
+          },
+          "b": {
+            "node": "n158",
+            "port": "R"
+          },
+          "route": {
+            "waypoints": []
+          },
+          "color": "blue"
+        },
+        {
+          "id": "n170",
+          "lineId": "n170",
+          "a": {
+            "node": "n146",
+            "port": "R"
+          },
+          "b": {
+            "node": "n168",
+            "port": "T"
+          },
+          "color": "blue"
+        }
+      ]
+    }
+  ]
+}

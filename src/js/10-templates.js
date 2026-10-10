@@ -19,7 +19,8 @@ function storeTemplates() {
   catch { alert('The browser storage is full, so templates could not be saved. Export them to a file and remove some.'); }
   renderTemplates(); render();
 }
-const templateById = id => templates.find(t => t.id === id);
+// Built-in templates come with the application and cannot be changed; a placed copy can be saved as your own.
+const templateById = id => templates.find(t => t.id === id) || BUILTIN_TEMPLATES.find(t => t.id === id);
 const templateByName = name => templates.find(t => t.name.toLowerCase() === name.trim().toLowerCase());
 const newTemplateId = () => 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -74,24 +75,26 @@ function templateThumbnail(t) {
   finally { state = keep; }
 }
 
+function templateTile(t) {
+  const tile = document.createElement('button');
+  tile.className = 'item template';
+  tile.draggable = true;
+  tile.dataset.template = t.id;
+  tile.title = [t.name, t.detail, 'template'].filter(Boolean).join(' · ');
+  tile.innerHTML = `<span class="glyph">${templateThumbnail(t)}</span><b>${escapeHtml(t.name)}</b>${t.detail ? `<small>${escapeHtml(t.detail)}</small>` : ''}`;
+  tile.ondragstart = e => { e.dataTransfer.setData('text/plain', 'template:' + t.id); e.dataTransfer.effectAllowed = 'copy'; };
+  tile.onclick = e => placeTemplate(t.id, view.x + view.w / 2, view.y + view.h / 2, e.altKey);
+  return tile;
+}
 function renderTemplates() {
   const target = $('templatePalette');
   target.replaceChildren();
-  if (!templates.length) {
-    target.innerHTML = '<p class="palette-hint">Select symbols on the sheet and choose <b>Save as template</b> to reuse them.</p>';
-    return;
-  }
-  for (const t of templates) {
-    const tile = document.createElement('button');
-    tile.className = 'item template';
-    tile.draggable = true;
-    tile.dataset.template = t.id;
-    tile.title = `${t.name} · template`;
-    tile.innerHTML = `<span class="glyph">${templateThumbnail(t)}</span><b>${escapeHtml(t.name)}</b>`;
-    tile.ondragstart = e => { e.dataTransfer.setData('text/plain', 'template:' + t.id); e.dataTransfer.effectAllowed = 'copy'; };
-    tile.onclick = e => placeTemplate(t.id, view.x + view.w / 2, view.y + view.h / 2, e.altKey);
-    target.appendChild(tile);
-  }
+  if (!templates.length) target.innerHTML = '<p class="palette-hint">Select symbols on the sheet and choose <b>Save as template</b> to reuse them.</p>';
+  for (const t of templates) target.appendChild(templateTile(t));
+}
+function renderBuiltinTemplates() {
+  for (const t of BUILTIN_TEMPLATES) $('planPalette').appendChild(templateTile(t));
+  $('planPalette').previousElementSibling.hidden = $('planPalette').hidden = !BUILTIN_TEMPLATES.length;
 }
 
 // ---- Editing a template ----
@@ -114,6 +117,8 @@ function editTemplate(id) {
   selected = null;
   zoomToFit(); persist(); resetHistory();
 }
+// save: false closes without saving, true replaces the template being edited, and 'new' leaves
+// that template as it was and saves the sheet as another one under the title.
 function closeTemplate(save) {
   const id = editingTemplate();
   if (!id) return;
@@ -121,8 +126,9 @@ function closeTemplate(save) {
     if (!state.nodes.length) { alert('A template needs at least one symbol.'); return; }
     const name = state.title.trim() || templateById(id)?.name || 'Template';
     const clash = templateByName(name);
+    if (save === 'new' && clash) { alert(`A template is already called “${clash.name}”. Give this one another title first.`); return; }
     if (clash && clash.id !== id) { alert(`Another template is already called “${clash.name}”. Change the title first.`); return; }
-    saveTemplate(name, fragmentOf(state.nodes), id);
+    saveTemplate(name, fragmentOf(state.nodes), save === 'new' ? null : id);
   }
   let previous = null;
   try { previous = JSON.parse(localStorage.getItem(TEMPLATE_STASH)); localStorage.removeItem(TEMPLATE_STASH); } catch {}
@@ -130,6 +136,7 @@ function closeTemplate(save) {
   else seed();
 }
 $('templateSave').onclick = () => closeTemplate(true);
+$('templateSaveNew').onclick = () => closeTemplate('new');
 $('templateClose').onclick = () => closeTemplate(false);
 
 // ---- Template file ----

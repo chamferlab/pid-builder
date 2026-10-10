@@ -19,6 +19,7 @@ buildPalette('seal', 'sealPalette');
 buildPalette('instrument', 'instrumentPalette');
 buildPalette('equipment', 'equipmentPalette');
 renderTemplates();
+renderBuiltinTemplates();
 
 $('paletteSearch').oninput = e => {
   const query = e.target.value.trim().toLowerCase();

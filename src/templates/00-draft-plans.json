@@ -1,0 +1,1025 @@
+{
+ "type": "seal-loop-pid-templates",
+ "version": 1,
+ "templates": [
+  {
+   "name": "Plan 52",
+   "detail": "Unpressurized buffer · reservoir",
+   "nodes": [
+    {
+     "id": "t1",
+     "kind": "seal",
+     "x": -269,
+     "y": 329,
+     "tag": "FACE-TO-BACK · WO PLUG",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 120,
+       "y": -152,
+       "custom": true
+      },
+      {
+       "id": "P2",
+       "x": 180,
+       "y": -152,
+       "custom": true
+      }
+     ],
+     "w": 455.0,
+     "h": 363.6845533931372,
+     "sealVariant": "dual-seal-fb-wo-plug",
+     "artworkSource": "media"
+    },
+    {
+     "id": "t2",
+     "kind": "reservoir",
+     "x": 251,
+     "y": -51,
+     "tag": "BUFFER RESERVOIR",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 0.0,
+       "y": -107.5
+      },
+      {
+       "id": "P2",
+       "x": -85.0,
+       "y": 0.0
+      },
+      {
+       "id": "P3",
+       "x": 85.0,
+       "y": 0.0
+      },
+      {
+       "id": "P4",
+       "x": 0.0,
+       "y": 107.5
+      }
+     ],
+     "w": 170.0,
+     "h": 215.0,
+     "artworkSource": "media"
+    },
+    {
+     "id": "t5",
+     "kind": "junction",
+     "x": 251,
+     "y": -231,
+     "tag": "",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -22,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 22,
+       "y": 0
+      },
+      {
+       "id": "T",
+       "x": 0,
+       "y": -22
+      },
+      {
+       "id": "B",
+       "x": 0,
+       "y": 22
+      }
+     ],
+     "w": 44,
+     "h": 44
+    },
+    {
+     "id": "t6",
+     "kind": "isolation-valve",
+     "x": 251,
+     "y": -351,
+     "tag": "TO FLARE",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -48,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 48,
+       "y": 0
+      }
+     ],
+     "w": 96,
+     "h": 80,
+     "rotation": 90,
+     "orientation": "vertical"
+    },
+    {
+     "id": "t7",
+     "kind": "PT",
+     "x": 371,
+     "y": -231,
+     "tag": "PT",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -45,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 45,
+       "y": 0
+      }
+     ],
+     "w": 90,
+     "h": 90,
+     "number": "101",
+     "orientation": "horizontal"
+    },
+    {
+     "id": "t11",
+     "kind": "vent",
+     "x": 251,
+     "y": -466,
+     "tag": "",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 0,
+       "y": 45
+      }
+     ],
+     "w": 70,
+     "h": 90
+    },
+    {
+     "id": "t13",
+     "kind": "LT",
+     "x": 451,
+     "y": -51,
+     "tag": "LT",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -45,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 45,
+       "y": 0
+      }
+     ],
+     "w": 90,
+     "h": 90,
+     "number": "101",
+     "orientation": "horizontal"
+    }
+   ],
+   "pipes": [
+    {
+     "id": "t3",
+     "lineId": "t3",
+     "a": {
+      "node": "t1",
+      "port": "P1"
+     },
+     "b": {
+      "node": "t2",
+      "port": "P2"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t4",
+     "lineId": "t4",
+     "a": {
+      "node": "t2",
+      "port": "P4"
+     },
+     "b": {
+      "node": "t1",
+      "port": "P2"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t8",
+     "lineId": "t8",
+     "a": {
+      "node": "t2",
+      "port": "P1"
+     },
+     "b": {
+      "node": "t5",
+      "port": "B"
+     }
+    },
+    {
+     "id": "t9",
+     "lineId": "t9",
+     "a": {
+      "node": "t5",
+      "port": "T"
+     },
+     "b": {
+      "node": "t6",
+      "port": "R"
+     }
+    },
+    {
+     "id": "t10",
+     "lineId": "t10",
+     "a": {
+      "node": "t5",
+      "port": "R"
+     },
+     "b": {
+      "node": "t7",
+      "port": "L"
+     }
+    },
+    {
+     "id": "t12",
+     "lineId": "t12",
+     "a": {
+      "node": "t6",
+      "port": "L"
+     },
+     "b": {
+      "node": "t11",
+      "port": "P1"
+     }
+    },
+    {
+     "id": "t14",
+     "lineId": "t14",
+     "a": {
+      "node": "t2",
+      "port": "P3"
+     },
+     "b": {
+      "node": "t13",
+      "port": "L"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Plan 53A",
+   "detail": "Pressurized barrier · N₂ reservoir",
+   "nodes": [
+    {
+     "id": "t1",
+     "kind": "seal",
+     "x": -269,
+     "y": 275,
+     "tag": "BACK-TO-BACK · WO PLUG",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 115,
+       "y": -141,
+       "custom": true
+      },
+      {
+       "id": "P2",
+       "x": 170,
+       "y": -141,
+       "custom": true
+      }
+     ],
+     "w": 454.99999999999994,
+     "h": 341.6146375241916,
+     "sealVariant": "dual-seal-bb-wo-plug",
+     "artworkSource": "media"
+    },
+    {
+     "id": "t2",
+     "kind": "nitrogen",
+     "x": 251,
+     "y": -105,
+     "tag": "BARRIER RESERVOIR",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 0.0,
+       "y": -107.5
+      },
+      {
+       "id": "P2",
+       "x": -85.0,
+       "y": 0.0
+      },
+      {
+       "id": "P3",
+       "x": 85.0,
+       "y": 0.0
+      },
+      {
+       "id": "P4",
+       "x": 0.0,
+       "y": 107.5
+      }
+     ],
+     "w": 170.0,
+     "h": 215.0,
+     "artworkSource": "media"
+    },
+    {
+     "id": "t5",
+     "kind": "junction",
+     "x": 251,
+     "y": -285,
+     "tag": "",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -22,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 22,
+       "y": 0
+      },
+      {
+       "id": "T",
+       "x": 0,
+       "y": -22
+      },
+      {
+       "id": "B",
+       "x": 0,
+       "y": 22
+      }
+     ],
+     "w": 44,
+     "h": 44
+    },
+    {
+     "id": "t6",
+     "kind": "isolation-valve",
+     "x": 251,
+     "y": -405,
+     "tag": "N₂ SUPPLY",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -48,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 48,
+       "y": 0
+      }
+     ],
+     "w": 96,
+     "h": 80,
+     "rotation": 90,
+     "orientation": "vertical"
+    },
+    {
+     "id": "t7",
+     "kind": "PI",
+     "x": 371,
+     "y": -285,
+     "tag": "PI",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -45,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 45,
+       "y": 0
+      }
+     ],
+     "w": 90,
+     "h": 90,
+     "number": "101",
+     "orientation": "horizontal"
+    },
+    {
+     "id": "t11",
+     "kind": "LT",
+     "x": 451,
+     "y": -105,
+     "tag": "LT",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -45,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 45,
+       "y": 0
+      }
+     ],
+     "w": 90,
+     "h": 90,
+     "number": "101",
+     "orientation": "horizontal"
+    }
+   ],
+   "pipes": [
+    {
+     "id": "t3",
+     "lineId": "t3",
+     "a": {
+      "node": "t1",
+      "port": "P1"
+     },
+     "b": {
+      "node": "t2",
+      "port": "P2"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t4",
+     "lineId": "t4",
+     "a": {
+      "node": "t2",
+      "port": "P4"
+     },
+     "b": {
+      "node": "t1",
+      "port": "P2"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t8",
+     "lineId": "t8",
+     "a": {
+      "node": "t2",
+      "port": "P1"
+     },
+     "b": {
+      "node": "t5",
+      "port": "B"
+     }
+    },
+    {
+     "id": "t9",
+     "lineId": "t9",
+     "a": {
+      "node": "t5",
+      "port": "T"
+     },
+     "b": {
+      "node": "t6",
+      "port": "R"
+     }
+    },
+    {
+     "id": "t10",
+     "lineId": "t10",
+     "a": {
+      "node": "t5",
+      "port": "R"
+     },
+     "b": {
+      "node": "t7",
+      "port": "L"
+     }
+    },
+    {
+     "id": "t12",
+     "lineId": "t12",
+     "a": {
+      "node": "t2",
+      "port": "P3"
+     },
+     "b": {
+      "node": "t11",
+      "port": "L"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Plan 53B",
+   "detail": "Pressurized barrier · bladder accumulator",
+   "nodes": [
+    {
+     "id": "t1",
+     "kind": "seal",
+     "x": -219,
+     "y": 272,
+     "tag": "BACK-TO-BACK · WO PLUG",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 115,
+       "y": -141,
+       "custom": true
+      },
+      {
+       "id": "P2",
+       "x": 170,
+       "y": -141,
+       "custom": true
+      }
+     ],
+     "w": 454.99999999999994,
+     "h": 341.6146375241916,
+     "sealVariant": "dual-seal-bb-wo-plug",
+     "artworkSource": "media"
+    },
+    {
+     "id": "t2",
+     "kind": "TI",
+     "x": 31,
+     "y": -398,
+     "tag": "TI",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -45,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 45,
+       "y": 0
+      }
+     ],
+     "w": 90,
+     "h": 90,
+     "number": "101",
+     "orientation": "horizontal"
+    },
+    {
+     "id": "t3",
+     "kind": "cooler",
+     "x": 381,
+     "y": -88,
+     "tag": "COOLER",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 0.0,
+       "y": -100.0
+      },
+      {
+       "id": "P2",
+       "x": 0.0,
+       "y": 100.0
+      },
+      {
+       "id": "P3",
+       "x": -65.0,
+       "y": 40.0
+      },
+      {
+       "id": "P4",
+       "x": 65.0,
+       "y": -40.0
+      }
+     ],
+     "w": 130.0,
+     "h": 200.0,
+     "artworkSource": "media"
+    },
+    {
+     "id": "t6",
+     "kind": "junction",
+     "x": 181,
+     "y": 57,
+     "tag": "",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -22,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 22,
+       "y": 0
+      },
+      {
+       "id": "T",
+       "x": 0,
+       "y": -22
+      },
+      {
+       "id": "B",
+       "x": 0,
+       "y": 22
+      }
+     ],
+     "w": 44,
+     "h": 44
+    },
+    {
+     "id": "t7",
+     "kind": "junction",
+     "x": 71,
+     "y": 57,
+     "tag": "",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -22,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 22,
+       "y": 0
+      },
+      {
+       "id": "T",
+       "x": 0,
+       "y": -22
+      },
+      {
+       "id": "B",
+       "x": 0,
+       "y": 22
+      }
+     ],
+     "w": 44,
+     "h": 44
+    },
+    {
+     "id": "t11",
+     "kind": "isolation-valve",
+     "x": 181,
+     "y": -18,
+     "tag": "",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -48,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 48,
+       "y": 0
+      }
+     ],
+     "w": 96,
+     "h": 80,
+     "rotation": 90,
+     "orientation": "vertical"
+    },
+    {
+     "id": "t12",
+     "kind": "accumulator",
+     "x": 181,
+     "y": -228,
+     "tag": "ACCUMULATOR",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 0.0,
+       "y": 100.0
+      }
+     ],
+     "w": 80.0,
+     "h": 200.0,
+     "artworkSource": "media"
+    },
+    {
+     "id": "t15",
+     "kind": "PI",
+     "x": 71,
+     "y": -38,
+     "tag": "PI",
+     "notes": "",
+     "ports": [
+      {
+       "id": "T",
+       "x": 0,
+       "y": -45
+      },
+      {
+       "id": "B",
+       "x": 0,
+       "y": 45
+      }
+     ],
+     "w": 90,
+     "h": 90,
+     "number": "101",
+     "orientation": "vertical"
+    }
+   ],
+   "pipes": [
+    {
+     "id": "t4",
+     "lineId": "t4",
+     "a": {
+      "node": "t1",
+      "port": "P1"
+     },
+     "b": {
+      "node": "t2",
+      "port": "L"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t5",
+     "lineId": "t5",
+     "a": {
+      "node": "t2",
+      "port": "R"
+     },
+     "b": {
+      "node": "t3",
+      "port": "P1"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t8",
+     "lineId": "t8",
+     "a": {
+      "node": "t3",
+      "port": "P2"
+     },
+     "b": {
+      "node": "t6",
+      "port": "R"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t9",
+     "lineId": "t8",
+     "a": {
+      "node": "t6",
+      "port": "L"
+     },
+     "b": {
+      "node": "t7",
+      "port": "R"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t10",
+     "lineId": "t8",
+     "a": {
+      "node": "t7",
+      "port": "L"
+     },
+     "b": {
+      "node": "t1",
+      "port": "P2"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t13",
+     "lineId": "t13",
+     "a": {
+      "node": "t6",
+      "port": "T"
+     },
+     "b": {
+      "node": "t11",
+      "port": "R"
+     }
+    },
+    {
+     "id": "t14",
+     "lineId": "t14",
+     "a": {
+      "node": "t11",
+      "port": "L"
+     },
+     "b": {
+      "node": "t12",
+      "port": "P1"
+     }
+    },
+    {
+     "id": "t16",
+     "lineId": "t16",
+     "a": {
+      "node": "t7",
+      "port": "T"
+     },
+     "b": {
+      "node": "t15",
+      "port": "B"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Plan 54",
+   "detail": "Pressurized barrier · external system",
+   "nodes": [
+    {
+     "id": "t1",
+     "kind": "seal",
+     "x": -135,
+     "y": 147,
+     "tag": "BACK-TO-BACK · WO PLUG",
+     "notes": "",
+     "ports": [
+      {
+       "id": "P1",
+       "x": 115,
+       "y": -141,
+       "custom": true
+      },
+      {
+       "id": "P2",
+       "x": 170,
+       "y": -141,
+       "custom": true
+      }
+     ],
+     "w": 454.99999999999994,
+     "h": 341.6146375241916,
+     "sealVariant": "dual-seal-bb-wo-plug",
+     "artworkSource": "media"
+    },
+    {
+     "id": "t2",
+     "kind": "TI",
+     "x": 165,
+     "y": -273,
+     "tag": "TI",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -45,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 45,
+       "y": 0
+      }
+     ],
+     "w": 90,
+     "h": 90,
+     "number": "101",
+     "orientation": "horizontal"
+    },
+    {
+     "id": "t3",
+     "kind": "isolation-valve",
+     "x": 315,
+     "y": -273,
+     "tag": "TO BARRIER SYSTEM",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -48,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 48,
+       "y": 0
+      }
+     ],
+     "w": 96,
+     "h": 80
+    },
+    {
+     "id": "t6",
+     "kind": "PI",
+     "x": 165,
+     "y": -123,
+     "tag": "PI",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -45,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 45,
+       "y": 0
+      }
+     ],
+     "w": 90,
+     "h": 90,
+     "number": "101",
+     "orientation": "horizontal"
+    },
+    {
+     "id": "t7",
+     "kind": "isolation-valve",
+     "x": 315,
+     "y": -123,
+     "tag": "FROM BARRIER SYSTEM",
+     "notes": "",
+     "ports": [
+      {
+       "id": "L",
+       "x": -48,
+       "y": 0
+      },
+      {
+       "id": "R",
+       "x": 48,
+       "y": 0
+      }
+     ],
+     "w": 96,
+     "h": 80
+    }
+   ],
+   "pipes": [
+    {
+     "id": "t4",
+     "lineId": "t4",
+     "a": {
+      "node": "t1",
+      "port": "P1"
+     },
+     "b": {
+      "node": "t2",
+      "port": "L"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t5",
+     "lineId": "t5",
+     "a": {
+      "node": "t2",
+      "port": "R"
+     },
+     "b": {
+      "node": "t3",
+      "port": "L"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t8",
+     "lineId": "t8",
+     "a": {
+      "node": "t7",
+      "port": "L"
+     },
+     "b": {
+      "node": "t6",
+      "port": "R"
+     },
+     "direction": "forward"
+    },
+    {
+     "id": "t9",
+     "lineId": "t9",
+     "a": {
+      "node": "t6",
+      "port": "L"
+     },
+     "b": {
+      "node": "t1",
+      "port": "P2"
+     },
+     "direction": "forward"
+    }
+   ]
+  }
+ ]
+}

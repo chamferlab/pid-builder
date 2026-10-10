@@ -1,5 +1,5 @@
 // Symbol catalog and drawing constants.
-// MEDIA_SYMBOLS is injected above this file by scripts/build.py.
+// MEDIA_SYMBOLS and BUILTIN_TEMPLATES are injected above this file by scripts/build.py.
 
 const NS = 'http://www.w3.org/2000/svg';
 const STORAGE_KEY = 'seal-loop-pid-v1';
@@ -26,6 +26,8 @@ const INSTRUMENTS = {
   TT: {name: 'Temperature transmitter', group: 'instrument', w: 90, h: 90},
   FI: {name: 'Flow indicator', group: 'instrument', w: 90, h: 90},
   FT: {name: 'Flow transmitter', group: 'instrument', w: 90, h: 90},
+  LI: {name: 'Level indicator', group: 'instrument', w: 90, h: 90},
+  LT: {name: 'Level transmitter', group: 'instrument', w: 90, h: 90},
   PDIT: {name: 'Differential pressure indicator / transmitter', group: 'instrument', w: 100, h: 90}
 };
 // Line fittings are drawn in code (05-symbols.js) because they turn with the pipe they sit in.

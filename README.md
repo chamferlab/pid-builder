@@ -112,6 +112,21 @@ Select a pipe and choose **Properties → Appearance → Instrument air** for a 
 
 Select a pipe and choose **Properties → Flow arrow** to show an arrow from its first connected port to its second, reverse the arrow, or remove it. The panel names both ports. The arrow follows the pipe's longest straight segment when you move symbols or bends, matches the line color, and appears in saved projects and SVG/PNG exports. Existing pipes have no arrow until you set one. Inserting an instrument or junction into a directed pipe carries its direction onto both new sections.
 
+## Seal plans
+
+The **Seal plans** section at the top of the palette holds ready-made loops: click or drag one onto the sheet and you get the seal, equipment, instruments, and piping already connected.
+
+| Plan | What is placed |
+| --- | --- |
+| **Plan 52** | Face-to-back dual seal, buffer reservoir, vent line to flare with valve and PT, LT on the reservoir. |
+| **Plan 53A** | Back-to-back dual seal, barrier reservoir with N₂ supply valve and PI, LT on the reservoir. |
+| **Plan 53B** | Back-to-back dual seal, TI on the outlet, cooler, bladder accumulator on an isolation valve, PI on the return. |
+| **Plan 54** | Back-to-back dual seal, TI and valve to the external barrier system, valve and PI from it. |
+
+These are starting points drawn from the general arrangement of each plan, not checked against API 682 or a project standard. They contain only symbols the palette has, so there is no orifice, pressure relief, or fill connection, and the seal ports are placed on top of the gland rather than on real connection positions. A placed plan is ordinary drawing content: change it freely, and select it and choose **Save as template** to keep your version. The built-in plans themselves cannot be edited, renamed, or deleted in the application.
+
+To change what ships in the HTML, replace or add files in `src/templates/` and rebuild. Each file is a template export from the application (`seal-loop-templates.json`), so you can build your plans on the sheet, save them as templates, export, and drop the file there. Files are read in filename order, and a plan with the name of an earlier one replaces it, so your own **Plan 53B** takes the place of the draft in `00-draft-plans.json`. A template's optional `detail` text is the second line on its tile.
+
 ## Templates
 
 A template is a piece of drawing you keep for reuse: symbols with their ports, and the pipes between them, for example a dual seal with its cooler.
@@ -119,8 +134,8 @@ A template is a piece of drawing you keep for reuse: symbols with their ports, a
 | To | Do this |
 | --- | --- |
 | Create a template | Select the symbols (Shift-drag an area, or Ctrl+A), choose **Save as template** in Properties, and name it. Pipes are kept when both ends are in the selection. Saving under an existing name replaces that template. |
-| Use it | Click its tile at the top of the palette, or drag the tile onto the sheet. The copy is ordinary drawing content; instruments in it take the next free tag numbers. |
-| Change it | With nothing selected, find it under **Properties → Templates** and choose **Edit**. The template opens as a drawing of its own and the drawing you were working on is set aside. **Save template** or **Close without saving** brings your drawing back. The title is the template's name. |
+| Use it | Click its tile under **My templates** in the palette, or drag the tile onto the sheet. The copy is ordinary drawing content; instruments in it take the next free tag numbers. |
+| Change it | With nothing selected, find it under **Properties → Templates** and choose **Edit**. The template opens as a drawing of its own and the drawing you were working on is set aside. **Save template** replaces the template, **Save as new template** leaves it as it was and saves the sheet as another one, and **Close without saving** discards the changes; each brings your drawing back. The title is the template's name, so changing it and choosing **Save template** renames the template. |
 | Rename or delete it | Use the name field and the × button in the same list. Drawings that already used the template are not affected. |
 | Back up or share | **Export** downloads every template as `seal-loop-templates.json`; **Import** adds the templates in such a file, replacing those with the same name. |
 
@@ -136,7 +151,7 @@ The mechanical seal palette includes a single seal and six dual seal variants: b
 
 Each seal has its own artwork, so different types can coexist in one drawing. Any `+` marks still printed in artwork are only placement guides; click them with the Pipe tool to make real connection points. Seals can be moved, transformed, duplicated, and deleted.
 
-Instrumentation includes **PI, PT, TI, TT, FI, FT, and PDIT**. Each new instrument is numbered per type, starting at 101 (PI-101, PI-102, TT-101), and the number is drawn in the bubble under the type letters. Select an instrument to change the number in **Properties → Tag number**, for example to give a PI and PT the same loop number; clear it to show the letters alone. Instruments in drawings saved before numbering existed stay unnumbered until you give them one. New instruments also start without ports. Inline insertion creates the two line ports required to split an existing pipe.
+Instrumentation includes **PI, PT, TI, TT, FI, FT, LI, LT, and PDIT**. Each new instrument is numbered per type, starting at 101 (PI-101, PI-102, TT-101), and the number is drawn in the bubble under the type letters. Select an instrument to change the number in **Properties → Tag number**, for example to give a PI and PT the same loop number; clear it to show the letters alone. Instruments in drawings saved before numbering existed stay unnumbered until you give them one. New instruments also start without ports. Inline insertion creates the two line ports required to split an existing pipe.
 
 Equipment includes a **reservoir**, **reservoir with N₂ top connection**, **accumulator**, **cooler**, **cooler with two coils**, **heater**, **circulating pump**, **air driven pump**, and **dome-loaded pressure control valve**. Line fittings are an **isolation valve**, **check valve**, **drain**, **vent**, and a pipe junction.
 
@@ -193,6 +208,7 @@ Browser storage is local and can be cleared; **Save project** is the portable ba
 - `src/js/` — the application, concatenated in filename order into one script:
   `01-catalog` (symbols and constants), `02-state` (drawing state, undo, autosave), `03-geometry`, `04-routing` (pipe routes), `05-symbols` (built-in artwork), `06-render`, `07-inspector` (Properties panel), `08-actions` (edits), `09-interactions` (pointer and keyboard), `10-io` (save, open, import, export), `10-templates` (template library, editing, and its file), `11-main` (palette and startup).
 - `media/` — source SVGs for the seals and all equipment.
+- `src/templates/` — template files built into the HTML as the seal plans.
 - `scripts/build.py` — builds `PID-Builder.html`; standard library only.
 - `scripts/test-app.py` — Firefox regression tests; standard library only.
 
@@ -203,7 +219,7 @@ python3 scripts/test-app.py   # needs Firefox
 
 After editing an SVG in `media/`, rebuild and reload the page. Equipment needs nothing else. The seal drawings sit on a larger Inkscape page and are cropped using the bounds recorded in `BOUNDS` in `scripts/build.py`; update those if a seal's size or position on its page changes. To add an equipment symbol, add its SVG to `media/`, an entry to `EQUIPMENT` in the build script, and its nozzle ends to `PORTS` there. `PORTS` lists each symbol's default ports in the SVG's own coordinates; update it when you move a nozzle.
 
-The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, templates, default ports, alignment guides, pipe spacing, and crossing hops. Dragging a template tile onto the sheet and the PNG export are not covered.
+The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, templates, default ports, alignment guides, pipe spacing, crossing hops, and the built-in seal plans. Dragging a template tile onto the sheet and the PNG export are not covered.
 
 ## Current scope
 
@@ -220,6 +236,6 @@ This is a drawing prototype, not a validated P&ID or an API-plan generator. Know
 In planned order:
 
 1. **PDF export** of the framed sheet.
-2. **Built-in seal plan templates** (Plan 52, 53A, 53B, 54) shipped inside the HTML, once the user templates have settled.
+2. **Review of the built-in seal plans** against the arrangements actually used, and the symbols they lack (orifice, relief valve, fill connection).
 
 Smaller items: line size and spec shown on the pipe, a legend generated from the symbols used, more title block fields, and drawing validation.

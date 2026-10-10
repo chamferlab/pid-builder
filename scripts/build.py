@@ -105,23 +105,44 @@ def symbol_catalog():
     return catalog
 
 
+def builtin_templates():
+    """Templates shipped inside the HTML: every template file in src/templates/, in filename order.
+
+    A template with the name of an earlier one replaces it and keeps its place and tile text,
+    so a file of your own overrides a plan in 00-draft-plans.json.
+    """
+    templates = {}
+    for path in sorted((SRC / 'templates').glob('*.json'), key=lambda p: p.name.lower()):
+        data = json.loads(path.read_text())
+        if data.get('type') != 'seal-loop-pid-templates':
+            raise SystemExit(f'{path.name} is not a template file exported from the builder.')
+        for t in data['templates']:
+            key = t['name'].strip().lower()
+            if key in templates:
+                print(f'  {path.name}: replaces the earlier “{templates[key]["name"]}”')
+                t = {'detail': templates[key].get('detail'), **t}
+            templates[key] = {k: v for k, v in t.items() if v is not None}
+    return [{**t, 'id': f'builtin-{i}', 'builtin': True} for i, t in enumerate(templates.values())]
+
+
 def js_literal(value):
     """JSON that is safe inside an inline <script>."""
     return json.dumps(value, separators=(',', ':'), ensure_ascii=False).replace('</', '<\\/')
 
 
 def build():
-    catalog = symbol_catalog()
+    catalog, plans = symbol_catalog(), builtin_templates()
     injected = (
         '// Embedded artwork, generated from media/.\n'
         f'const MEDIA_SYMBOLS={js_literal(catalog)};\n'
+        f'const BUILTIN_TEMPLATES={js_literal(plans)};\n'
     )
     scripts = [injected] + [path.read_text() for path in sorted((SRC / 'js').glob('*.js'))]
     html = (SRC / 'index.html').read_text()
     html = html.replace('/* @build:css */', (SRC / 'styles.css').read_text().strip())
     html = html.replace('/* @build:js */', '\n'.join(script.strip() + '\n' for script in scripts))
     (ROOT / 'PID-Builder.html').write_text(html)
-    print(f'Built PID-Builder.html: {len(catalog)} media symbols, {len(scripts) - 1} scripts, {len(html) // 1024} KB.')
+    print(f'Built PID-Builder.html: {len(catalog)} media symbols, {len(plans)} built-in templates, {len(scripts) - 1} scripts, {len(html) // 1024} KB.')
 
 
 if __name__ == '__main__':

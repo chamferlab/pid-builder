@@ -824,6 +824,20 @@ def run_editing_tests(browser):
     b.js("document.querySelector('[data-kind=PT]').click();return true")
     click('templateClose')
     assert state() == placed and stored_templates() == edited, 'closing without saving changes nothing'
+    # Save as new template keeps the edited template and adds another under the title.
+    b.js("document.querySelector('[data-template-edit]').click();return true")
+    b.js("document.querySelector('[data-kind=PT]').click();return true")
+    corner = b.js("return document.getElementById('drawing').getAttribute('viewBox').split(' ').map(Number)")
+    press(corner[0] + 5, corner[1] + 5)
+    b.js("window.alert=()=>{};return true")
+    click('templateSaveNew')
+    assert not b.js("return document.getElementById('templateBar').hidden") and stored_templates() == edited, 'a new template needs a title of its own'
+    b.js(type_title, ['Cooler leg with PT'])
+    click('templateSaveNew')
+    assert state() == placed and stored_templates()[0] == edited[0]
+    assert [(t['name'], len(t['nodes'])) for t in stored_templates()] == [('Cooler leg with TT', 3), ('Cooler leg with PT', 4)]
+    b.js("document.querySelectorAll('[data-template-delete]')[1].click();return true")
+    assert stored_templates() == edited
 
     # Rename in the list, then export, delete, and import.
     b.js("const el=document.querySelector('[data-template-name]');el.value='Leg A';el.onchange();return true")
@@ -923,6 +937,33 @@ def run_editing_tests(browser):
     click('snapGrid')
     print('PASS: alignment guides for ports, centres, and edges', flush=True)
 
+    # Built-in seal plans ship in the HTML: they can be placed and saved as one's own, not changed.
+    load(dict(title='Plans', nodes=[], pipes=[], nextId=1, sealSvg=None, portModeVersion=3))
+    plans = b.js("return [...document.querySelectorAll('#planPalette [data-template] b')].map(t=>t.textContent)")
+    assert plans == ['Plan 52', 'Plan 53A', 'Plan 53B', 'Plan 54']
+    assert b.js("return document.querySelectorAll('#planPalette [data-template] svg image').length") >= 4
+    for index, name in enumerate(plans):
+        load(dict(title='Plans', nodes=[], pipes=[], nextId=1, sealSvg=None, portModeVersion=3))
+        b.js("document.querySelectorAll('#planPalette [data-template]')[arguments[0]].click();return true", [index])
+        drawing = state()
+        ports = {(n['id'], q['id']) for n in drawing['nodes'] for q in n['ports']}
+        assert drawing['nodes'][0]['kind'] == 'seal' and len(drawing['pipes']) >= 4, name
+        assert all((q['node'], q['port']) in ports for pipe in drawing['pipes'] for q in (pipe['a'], pipe['b'])), f'{name}: every pipe end is a real port'
+        assert b.js("return document.querySelectorAll('#pipes .wire:not(.hit)').length") == len(drawing['pipes'])
+        assert all(n['number'] == '101' for n in drawing['nodes'] if n['kind'] in ('PI', 'PT', 'TI', 'LT'))
+    click('undo')
+    assert state()['nodes'] == [], 'placing a plan is one undo step'
+    click('redo')
+    press(5, 5)
+    assert stored_templates() == [] and not b.js("return !!document.querySelector('[data-template-row]')"), 'built-in plans are not in the editable list'
+    key('a', ctrlKey=True)
+    answer('My 54')
+    click('saveTemplate')
+    assert [t['name'] for t in stored_templates()] == ['My 54'] and len(stored_templates()[0]['pipes']) == len(state()['pipes'])
+    b.js("localStorage.removeItem(arguments[0]);return true", [TEMPLATES])
+    b.call('WebDriver:Navigate', {'url': url})
+    print('PASS: built-in seal plans', flush=True)
+
     # Instruments are numbered per type as they are placed; the number shows in the bubble.
     def type_into(element_id, value):
         b.js("const el=document.getElementById(arguments[0]);el.value=arguments[1];el.dispatchEvent(new Event('input',{bubbles:true}));return true", [element_id, value])
@@ -931,13 +972,13 @@ def run_editing_tests(browser):
         return [(n['kind'], n.get('number')) for n in state()['nodes']]
 
     load(dict(title='Old drawing', nodes=[dict(id='n0', kind='PI', x=300, y=300, w=90, h=90, tag='PI', notes='', ports=[])], pipes=[], nextId=1, sealSvg=None, portModeVersion=3))
-    assert numbers() == [('PI', None)] and not b.js("return !!document.querySelector('.tag-number')")
+    assert numbers() == [('PI', None)] and not b.js("return !!document.querySelector('#nodes .tag-number')")
     assert not b.js("return !!document.querySelector('.sheet-frame')"), 'a drawing saved without sheet data has no frame'
     load(dict(title='Numbered', nodes=[], pipes=[], nextId=1, sealSvg=None, portModeVersion=3))
     for kind in ['PI', 'PI', 'TT']:
         b.js('document.querySelector(`[data-kind="${arguments[0]}"]`).click();return true', [kind])
     assert numbers() == [('PI', '101'), ('PI', '102'), ('TT', '101')]
-    assert b.js("return [...document.querySelectorAll('.tag-number')].map(t=>t.textContent)") == ['101', '102', '101']
+    assert b.js("return [...document.querySelectorAll('#nodes .tag-number')].map(t=>t.textContent)") == ['101', '102', '101']
     type_into('numberEdit', '2')
     type_into('numberEdit', '205')
     assert numbers()[2] == ('TT', '205') and b.js("return document.getElementById('tagPreview').textContent") == 'TT-205'
@@ -948,7 +989,7 @@ def run_editing_tests(browser):
     key('d', ctrlKey=True)
     assert numbers()[3:] == [('TT', '206'), ('TT', '207')], 'new and duplicated instruments take the next free number'
     type_into('numberEdit', '')
-    assert numbers()[4] == ('TT', '') and len(b.js("return [...document.querySelectorAll('.tag-number')].map(t=>t.textContent)")) == 4
+    assert numbers()[4] == ('TT', '') and len(b.js("return [...document.querySelectorAll('#nodes .tag-number')].map(t=>t.textContent)")) == 4
     print('PASS: instrument tag numbers', flush=True)
 
     # A new drawing has a frame and title block, shown on the sheet and exported with it.

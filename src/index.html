@@ -36,7 +36,8 @@
 
   <aside class="palette">
     <input id="paletteSearch" class="text" type="search" placeholder="Search symbols" aria-label="Search symbols">
-    <div class="section">Templates</div><div class="tiles seals" id="templatePalette"></div>
+    <div class="section">Seal plans</div><div class="tiles seals" id="planPalette"></div>
+    <div class="section">My templates</div><div class="tiles seals" id="templatePalette"></div>
     <div class="section">Mechanical seals</div><div class="tiles seals" id="sealPalette"></div>
     <div class="section">Instruments</div><div class="tiles" id="instrumentPalette"></div>
     <div class="section">Equipment and piping</div><div class="tiles" id="equipmentPalette"></div>
@@ -62,7 +63,8 @@
       <svg id="drawing" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 900" aria-label="P and ID drawing canvas"></svg>
       <div class="template-bar" id="templateBar" hidden>
         <span>Editing template <b id="templateBarName"></b></span>
-        <button class="button" id="templateSave">Save template</button>
+        <button class="button" id="templateSave" title="Replace this template with what is on the sheet">Save template</button>
+        <button class="button" id="templateSaveNew" title="Keep this template as it was and save the sheet as another one, named by the title">Save as new template</button>
         <button class="button" id="templateClose">Close without saving</button>
       </div>
       <input id="templateFile" type="file" accept=".json,application/json" hidden>
