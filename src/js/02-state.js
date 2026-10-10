@@ -3,7 +3,10 @@
 const $ = id => document.getElementById(id);
 const svg = $('drawing');
 
-const blankState = () => ({title: 'Untitled seal loop', nodes: [], pipes: [], nextId: 1, sealSvg: null, portModeVersion: 3});
+const blankState = () => ({
+  title: 'Untitled seal loop', nodes: [], pipes: [], nextId: 1, sealSvg: null, portModeVersion: 3,
+  sheet: {frame: true, number: '', revision: '', date: '', author: ''}
+});
 
 let state = blankState();
 let selected = null;         // {type:'node',id} | {type:'nodes',ids} | {type:'pipe',id}
@@ -35,6 +38,16 @@ const pipeColor = p => PIPE_COLORS[p.color]?.value || DEFAULT_PIPE_COLOR;
 const lineKey = p => p.lineId || p.id;
 const pipesOnNode = nodeId => state.pipes.filter(p => p.a.node === nodeId || p.b.node === nodeId);
 const connectedPorts = n => [...new Set(pipesOnNode(n.id).flatMap(p => [p.a, p.b]).filter(ref => ref.node === n.id).map(ref => ref.port))].sort();
+
+// Drawings saved before the title block existed have no sheet data and no frame.
+const sheetInfo = () => state.sheet || {};
+// The next free loop number for an instrument type: PI-101, PI-102, ...
+const FIRST_TAG_NUMBER = 101;
+function nextTagNumber(kind) {
+  const used = state.nodes.filter(n => n.kind === kind).map(n => parseInt(n.number, 10)).filter(Number.isFinite);
+  return String(used.length ? Math.max(...used) + 1 : FIRST_TAG_NUMBER);
+}
+const instrumentTag = n => [n.kind, String(n.number ?? '').trim()].filter(Boolean).join('-');
 
 const selectedNodeIds = () => selected?.type === 'nodes' ? selected.ids : selected?.type === 'node' ? [selected.id] : [];
 const selectedNodes = () => selectedNodeIds().map(byId).filter(Boolean);

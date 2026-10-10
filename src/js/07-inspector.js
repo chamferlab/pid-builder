@@ -19,6 +19,13 @@ function renderDrawingProperties(box) {
   box.innerHTML = `
     <div class="panel-title">Drawing</div>
     ${field('Title', 'titleEdit', state.title)}
+    <div class="field-grid">
+      <div>${field('Drawing no.', 'sheetNumber', sheetInfo().number || '', 'data-sheet-field="number"')}</div>
+      <div>${field('Revision', 'sheetRevision', sheetInfo().revision || '', 'data-sheet-field="revision"')}</div>
+      <div>${field('Date', 'sheetDate', sheetInfo().date || '', 'type="date" data-sheet-field="date"')}</div>
+      <div>${field('Drawn by', 'sheetAuthor', sheetInfo().author || '', 'data-sheet-field="author"')}</div>
+    </div>
+    <label class="check"><input type="checkbox" id="sheetFrameToggle" ${sheetInfo().frame ? 'checked' : ''}> Frame and title block</label>
     <div class="panel-title">How to draw</div>
     <ol class="steps">
       <li>Drag symbols from the palette onto the sheet.</li>
@@ -33,8 +40,14 @@ function renderDrawingProperties(box) {
       <dt>Arrows</dt><dd>Nudge (Shift: one grid step)</dd><dt>Ctrl+D</dt><dd>Duplicate</dd>
       <dt>R</dt><dd>Rotate selected symbol</dd><dt>F</dt><dd>Zoom to fit</dd>
       <dt>Alt</dt><dd>Ignore snapping · Alt-click a port or bend to remove it</dd>
+      <dt>Alt-drag</dt><dd>Pull a valve or instrument out of its line</dd>
     </dl>`;
-  $('titleEdit').oninput = e => { state.title = e.target.value; $('sheetTitle').textContent = state.title; persist('titleEdit'); };
+  $('titleEdit').oninput = e => { state.title = e.target.value; renderCanvasOnly(); persist('titleEdit'); };
+  const sheet = () => state.sheet ||= {frame: false, number: '', revision: '', date: '', author: ''};
+  box.querySelectorAll('[data-sheet-field]').forEach(input => input.oninput = () => {
+    sheet()[input.dataset.sheetField] = input.value; renderCanvasOnly(); persist('sheet:' + input.id);
+  });
+  $('sheetFrameToggle').onchange = e => { sheet().frame = e.target.checked; renderCanvasOnly(); persist(); };
 }
 
 function renderGroupProperties(box) {
@@ -150,7 +163,8 @@ function renderNodeProperties(box, n) {
 
   box.innerHTML = `
     <div class="info"><b>${escapeHtml(name)}</b><br>X ${Math.round(n.x)}, Y ${Math.round(n.y)}</div>
-    ${field('Tag / caption', 'tagEdit', n.tag)}
+    ${isInstrument(n.kind) ? field(`Tag number <span class="muted" id="tagPreview">${escapeHtml(instrumentTag(n))}</span>`, 'numberEdit', n.number ?? '', 'maxlength="6" placeholder="None"') : ''}
+    ${field(isInstrument(n.kind) ? 'Caption' : 'Tag / caption', 'tagEdit', n.tag)}
 
     <div class="panel-title">Connection ports</div>
     <div class="chips">${ports || '<span class="muted">None yet. The Pipe tool adds them as you connect.</span>'}</div>
@@ -174,6 +188,10 @@ function renderNodeProperties(box, n) {
       <button class="button danger" id="deleteSelected">Delete</button>
     </div>`;
 
+  if (isInstrument(n.kind)) $('numberEdit').oninput = e => {
+    n.number = e.target.value.trim(); $('tagPreview').textContent = instrumentTag(n);
+    renderCanvasOnly(); persist('numberEdit:' + n.id);
+  };
   $('tagEdit').oninput = e => { n.tag = e.target.value; renderCanvasOnly(); persist('tagEdit:' + n.id); };
   $('notesEdit').oninput = e => { n.notes = e.target.value; persist('notesEdit:' + n.id); };
   $('symbolScale').onchange = e => {

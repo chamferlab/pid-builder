@@ -170,6 +170,8 @@ kbd { padding: 1px 5px; border: 1px solid #c7d4df; border-radius: 4px; backgroun
 textarea.text { resize: vertical; min-height: 60px; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; }
 .field-grid .field { margin-top: 6px; }
+.check { display: flex; align-items: center; gap: 7px; margin-top: 12px; font-size: 12px; color: #2e455e; cursor: pointer; }
+.field .muted { float: right; font-weight: 600; }
 
 .button {
   padding: 7px 8px;

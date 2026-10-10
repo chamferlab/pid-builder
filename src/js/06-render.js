@@ -9,6 +9,7 @@ function buildCanvas() {
     `<defs><pattern id="grid" width="${GRID_SIZE}" height="${GRID_SIZE}" patternUnits="userSpaceOnUse"><path d="M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}" fill="none" stroke="#e6edf2" stroke-width="1"/></pattern></defs>` +
     '<rect x="-20000" y="-20000" width="40000" height="40000" fill="#fff"/>' +
     '<rect class="editor-only" x="-20000" y="-20000" width="40000" height="40000" fill="url(#grid)"/>';
+  layers.sheet = mk('g', {id: 'sheetFrame', 'pointer-events': 'none'}, svg);
   layers.pipes = mk('g', {id: 'pipes'}, svg);
   layers.nodes = mk('g', {id: 'nodes'}, svg);
   layers.overlay = mk('g', {id: 'overlay', class: 'editor-only'}, svg);
@@ -30,6 +31,7 @@ function renderCanvas() {
   svg.setAttribute('class', `mode-${mode}${pending ? ' connecting' : ''}`);
   renderPipes();
   renderNodes();
+  renderSheet();
   renderOverlay();
   $('sheetTitle').textContent = state.title;
 }
@@ -93,12 +95,49 @@ function captionMarkup(n) {
   const bounds = nodeBounds(n), scale = nodeScale(n), instrument = isInstrument(n.kind);
   // Instruments inserted into a vertical line carry their caption beside the bubble.
   const beside = instrument && ((n.orientation === 'vertical') !== ((n.rotation || 0) % 180 !== 0));
-  const bubble = instrument
-    ? `<text y="${7 * scale}" text-anchor="middle" font-size="${(n.kind === 'PDIT' ? 17 : 22) * scale}" font-family="Arial,sans-serif" fill="${INK}" font-weight="600" pointer-events="none">${n.kind}</text>`
-    : '';
+  // A numbered instrument shows its type above its loop number, as in PI over 101.
+  const number = instrument ? String(n.number ?? '').trim() : '';
+  const letters = (y, size, text, cls) => `<text class="${cls}" y="${y * scale}" text-anchor="middle" font-size="${size * scale}" font-family="Arial,sans-serif" fill="${INK}" font-weight="600" pointer-events="none">${escapeHtml(text)}</text>`;
+  const long = n.kind.length > 2;
+  const bubble = !instrument ? ''
+    : number ? letters(-3, long ? 15 : 19, n.kind, 'tag-type') + letters(17, number.length > 4 ? 12 : 15, number, 'tag-number')
+    : letters(7, long ? 17 : 22, n.kind, 'tag-type');
   // A caption that only repeats the bubble letters adds nothing.
   const caption = instrument && String(n.tag).trim() === n.kind ? '' : n.tag;
   return bubble + `<text class="caption" x="${beside ? bounds.w / 2 + 14 : 0}" y="${beside ? 5 : bounds.h / 2 + 27}" text-anchor="${beside ? 'start' : 'middle'}" font-size="14" font-family="Arial,sans-serif" font-weight="600" fill="#345166" pointer-events="none">${escapeHtml(caption)}</text>`;
+}
+
+// The drawing frame and title block. They follow the export area, so the sheet on screen is
+// the sheet that is exported.
+const TITLE_BLOCK = {w: 470, h: 92, inset: 12};
+function sheetBox() {
+  const s = exportSize(), i = TITLE_BLOCK.inset;
+  return {l: s.x + i, t: s.y + i, r: s.x + s.w - i, b: s.y + s.h - i};
+}
+function renderSheet() {
+  const layer = layers.sheet, info = sheetInfo();
+  layer.replaceChildren();
+  if (!info.frame) return;
+  const f = sheetBox(), x = f.r - TITLE_BLOCK.w, y = f.b - TITLE_BLOCK.h, split = 44;
+  const stroke = {fill: 'none', stroke: INK, 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke'};
+  mk('rect', {class: 'sheet-frame', x: f.l, y: f.t, width: f.r - f.l, height: f.b - f.t, ...stroke}, layer);
+  const block = mk('g', {class: 'title-block', 'font-family': 'Arial,sans-serif'}, layer);
+  mk('rect', {x, y, width: TITLE_BLOCK.w, height: TITLE_BLOCK.h, ...stroke, fill: '#fff'}, block);
+  const cell = (label, value, cx, cy, width, size, name) => {
+    mk('text', {x: cx + 8, y: cy + 13, 'font-size': 8, 'font-weight': 700, 'letter-spacing': .6, fill: '#6b7f90'}, block).textContent = label;
+    // Text that would run over the cell border is cut short.
+    const fit = Math.max(1, Math.floor((width - 16) / (size * .58))), text = String(value ?? '').trim();
+    mk('text', {x: cx + 8, y: cy + 17 + size, 'font-size': size, 'font-weight': 600, fill: INK, 'data-sheet': name}, block).textContent =
+      text.length > fit ? text.slice(0, fit - 1) + '…' : text;
+  };
+  cell('TITLE', state.title, x, y, TITLE_BLOCK.w, 17, 'title');
+  mk('path', {d: `M ${x} ${y + split} H ${f.r}`, ...stroke, 'stroke-width': 1.2}, block);
+  let cx = x;
+  for (const [label, name, width] of [['DRAWING NO.', 'number', 160], ['REV', 'revision', 60], ['DATE', 'date', 110], ['DRAWN BY', 'author', 140]]) {
+    if (cx > x) mk('path', {d: `M ${cx} ${y + split} V ${f.b}`, ...stroke, 'stroke-width': 1.2}, block);
+    cell(label, info[name], cx, y + split, width, 13, name);
+    cx += width;
+  }
 }
 
 function renderNodes() {

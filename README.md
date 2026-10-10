@@ -99,13 +99,17 @@ Select a pipe and choose **Properties → Appearance → Instrument air** for a 
 
 Select a pipe and choose **Properties → Flow arrow** to show an arrow from its first connected port to its second, reverse the arrow, or remove it. The panel names both ports. The arrow follows the pipe's longest straight segment when you move symbols or bends, matches the line color, and appears in saved projects and SVG/PNG exports. Existing pipes have no arrow until you set one. Inserting an instrument or junction into a directed pipe carries its direction onto both new sections.
 
+## Frame and title block
+
+A new drawing has a frame and a title block in its bottom-right corner. With nothing selected, **Properties** holds the title, drawing number, revision, date, and author, and a checkbox to turn the frame off. The frame on screen is the exported sheet: it starts at 1500 × 900 and grows to hold everything drawn, and it gets taller rather than letting the title block cover a symbol. Text too long for its cell is cut short with an ellipsis. Drawings saved before this existed open without a frame; tick the checkbox to add one.
+
 ## Symbol palette
 
 The mechanical seal palette includes a single seal and six dual seal variants: back-to-back, face-to-face, and face-to-back, each with or without a plug seal. New seals start without connection ports; the Pipe tool adds them where you click.
 
 Each seal has its own artwork, so different types can coexist in one drawing. Any `+` marks still printed in artwork are only placement guides; click them with the Pipe tool to make real connection points. Seals can be moved, transformed, duplicated, and deleted.
 
-Instrumentation includes **PI, PT, TI, TT, FI, FT, and PDIT**. New instruments also start without ports. Inline insertion creates the two line ports required to split an existing pipe.
+Instrumentation includes **PI, PT, TI, TT, FI, FT, and PDIT**. Each new instrument is numbered per type, starting at 101 (PI-101, PI-102, TT-101), and the number is drawn in the bubble under the type letters. Select an instrument to change the number in **Properties → Tag number**, for example to give a PI and PT the same loop number; clear it to show the letters alone. Instruments in drawings saved before numbering existed stay unnumbered until you give them one. New instruments also start without ports. Inline insertion creates the two line ports required to split an existing pipe.
 
 Equipment includes a **reservoir**, **reservoir with N₂ top connection**, **accumulator**, **cooler**, **cooler with two coils**, **heater**, **circulating pump**, **air driven pump**, and **dome-loaded pressure control valve**. Line fittings are an **isolation valve**, **check valve**, **drain**, **vent**, and a pipe junction.
 
@@ -128,6 +132,7 @@ Keyboard shortcuts inside text fields retain the browser's normal text-editing b
 | Action | How |
 | --- | --- |
 | Add a port | Use the **Pipe** tool, or choose **+ Port** and click a symbol. Works on transformed symbols too. |
+| Take a symbol out of a line | Alt-drag a valve, instrument, or two-way junction off the pipe, or select it and press Delete. The two sections become one pipe again and keep the line's number, colour, and flow arrow. |
 | Remove a port | Select its symbol and click the port's chip in Properties, or Alt-click the port. Connected pipes on that port are removed too. |
 | Pan | Drag empty sheet space, or drag with the middle mouse button. |
 | Zoom | Use the mouse wheel or the `−`, `%`, and `+` buttons. **Fit** (or **F**) shows the whole drawing. |

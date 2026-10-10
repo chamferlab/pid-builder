@@ -64,6 +64,9 @@ function exportSize() {
   let left = 0, top = 0, right = HOME_VIEW.w, bottom = HOME_VIEW.h;
   const box = contentBox();
   if (box) { left = Math.min(left, box.l - 85); right = Math.max(right, box.r + 85); top = Math.min(top, box.t - 85); bottom = Math.max(bottom, box.b + 85); }
+  // The sheet grows downwards when the drawing would otherwise run under the title block.
+  const reach = TITLE_BLOCK.inset + 25;
+  if (sheetInfo().frame && box && box.r > right - TITLE_BLOCK.w - reach && box.b > bottom - TITLE_BLOCK.h - reach) bottom = box.b + TITLE_BLOCK.h + reach;
   return {x: Math.floor(left), y: Math.floor(top), w: Math.ceil(right - left), h: Math.ceil(bottom - top)};
 }
 function exportMarkup() {

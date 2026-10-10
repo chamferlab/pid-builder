@@ -178,6 +178,8 @@ kbd { padding: 1px 5px; border: 1px solid #c7d4df; border-radius: 4px; backgroun
 textarea.text { resize: vertical; min-height: 60px; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; }
 .field-grid .field { margin-top: 6px; }
+.check { display: flex; align-items: center; gap: 7px; margin-top: 12px; font-size: 12px; color: #2e455e; cursor: pointer; }
+.field .muted { float: right; font-weight: 600; }
 
 .button {
   padding: 7px 8px;
@@ -353,7 +355,10 @@ const isInsertable = kind => isInstrument(kind) || kind === 'junction' || !!spec
 const $ = id => document.getElementById(id);
 const svg = $('drawing');
 
-const blankState = () => ({title: 'Untitled seal loop', nodes: [], pipes: [], nextId: 1, sealSvg: null, portModeVersion: 3});
+const blankState = () => ({
+  title: 'Untitled seal loop', nodes: [], pipes: [], nextId: 1, sealSvg: null, portModeVersion: 3,
+  sheet: {frame: true, number: '', revision: '', date: '', author: ''}
+});
 
 let state = blankState();
 let selected = null;         // {type:'node',id} | {type:'nodes',ids} | {type:'pipe',id}
@@ -385,6 +390,16 @@ const pipeColor = p => PIPE_COLORS[p.color]?.value || DEFAULT_PIPE_COLOR;
 const lineKey = p => p.lineId || p.id;
 const pipesOnNode = nodeId => state.pipes.filter(p => p.a.node === nodeId || p.b.node === nodeId);
 const connectedPorts = n => [...new Set(pipesOnNode(n.id).flatMap(p => [p.a, p.b]).filter(ref => ref.node === n.id).map(ref => ref.port))].sort();
+
+// Drawings saved before the title block existed have no sheet data and no frame.
+const sheetInfo = () => state.sheet || {};
+// The next free loop number for an instrument type: PI-101, PI-102, ...
+const FIRST_TAG_NUMBER = 101;
+function nextTagNumber(kind) {
+  const used = state.nodes.filter(n => n.kind === kind).map(n => parseInt(n.number, 10)).filter(Number.isFinite);
+  return String(used.length ? Math.max(...used) + 1 : FIRST_TAG_NUMBER);
+}
+const instrumentTag = n => [n.kind, String(n.number ?? '').trim()].filter(Boolean).join('-');
 
 const selectedNodeIds = () => selected?.type === 'nodes' ? selected.ids : selected?.type === 'node' ? [selected.id] : [];
 const selectedNodes = () => selectedNodeIds().map(byId).filter(Boolean);
@@ -826,6 +841,7 @@ function buildCanvas() {
     `<defs><pattern id="grid" width="${GRID_SIZE}" height="${GRID_SIZE}" patternUnits="userSpaceOnUse"><path d="M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}" fill="none" stroke="#e6edf2" stroke-width="1"/></pattern></defs>` +
     '<rect x="-20000" y="-20000" width="40000" height="40000" fill="#fff"/>' +
     '<rect class="editor-only" x="-20000" y="-20000" width="40000" height="40000" fill="url(#grid)"/>';
+  layers.sheet = mk('g', {id: 'sheetFrame', 'pointer-events': 'none'}, svg);
   layers.pipes = mk('g', {id: 'pipes'}, svg);
   layers.nodes = mk('g', {id: 'nodes'}, svg);
   layers.overlay = mk('g', {id: 'overlay', class: 'editor-only'}, svg);
@@ -847,6 +863,7 @@ function renderCanvas() {
   svg.setAttribute('class', `mode-${mode}${pending ? ' connecting' : ''}`);
   renderPipes();
   renderNodes();
+  renderSheet();
   renderOverlay();
   $('sheetTitle').textContent = state.title;
 }
@@ -910,12 +927,49 @@ function captionMarkup(n) {
   const bounds = nodeBounds(n), scale = nodeScale(n), instrument = isInstrument(n.kind);
   // Instruments inserted into a vertical line carry their caption beside the bubble.
   const beside = instrument && ((n.orientation === 'vertical') !== ((n.rotation || 0) % 180 !== 0));
-  const bubble = instrument
-    ? `<text y="${7 * scale}" text-anchor="middle" font-size="${(n.kind === 'PDIT' ? 17 : 22) * scale}" font-family="Arial,sans-serif" fill="${INK}" font-weight="600" pointer-events="none">${n.kind}</text>`
-    : '';
+  // A numbered instrument shows its type above its loop number, as in PI over 101.
+  const number = instrument ? String(n.number ?? '').trim() : '';
+  const letters = (y, size, text, cls) => `<text class="${cls}" y="${y * scale}" text-anchor="middle" font-size="${size * scale}" font-family="Arial,sans-serif" fill="${INK}" font-weight="600" pointer-events="none">${escapeHtml(text)}</text>`;
+  const long = n.kind.length > 2;
+  const bubble = !instrument ? ''
+    : number ? letters(-3, long ? 15 : 19, n.kind, 'tag-type') + letters(17, number.length > 4 ? 12 : 15, number, 'tag-number')
+    : letters(7, long ? 17 : 22, n.kind, 'tag-type');
   // A caption that only repeats the bubble letters adds nothing.
   const caption = instrument && String(n.tag).trim() === n.kind ? '' : n.tag;
   return bubble + `<text class="caption" x="${beside ? bounds.w / 2 + 14 : 0}" y="${beside ? 5 : bounds.h / 2 + 27}" text-anchor="${beside ? 'start' : 'middle'}" font-size="14" font-family="Arial,sans-serif" font-weight="600" fill="#345166" pointer-events="none">${escapeHtml(caption)}</text>`;
+}
+
+// The drawing frame and title block. They follow the export area, so the sheet on screen is
+// the sheet that is exported.
+const TITLE_BLOCK = {w: 470, h: 92, inset: 12};
+function sheetBox() {
+  const s = exportSize(), i = TITLE_BLOCK.inset;
+  return {l: s.x + i, t: s.y + i, r: s.x + s.w - i, b: s.y + s.h - i};
+}
+function renderSheet() {
+  const layer = layers.sheet, info = sheetInfo();
+  layer.replaceChildren();
+  if (!info.frame) return;
+  const f = sheetBox(), x = f.r - TITLE_BLOCK.w, y = f.b - TITLE_BLOCK.h, split = 44;
+  const stroke = {fill: 'none', stroke: INK, 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke'};
+  mk('rect', {class: 'sheet-frame', x: f.l, y: f.t, width: f.r - f.l, height: f.b - f.t, ...stroke}, layer);
+  const block = mk('g', {class: 'title-block', 'font-family': 'Arial,sans-serif'}, layer);
+  mk('rect', {x, y, width: TITLE_BLOCK.w, height: TITLE_BLOCK.h, ...stroke, fill: '#fff'}, block);
+  const cell = (label, value, cx, cy, width, size, name) => {
+    mk('text', {x: cx + 8, y: cy + 13, 'font-size': 8, 'font-weight': 700, 'letter-spacing': .6, fill: '#6b7f90'}, block).textContent = label;
+    // Text that would run over the cell border is cut short.
+    const fit = Math.max(1, Math.floor((width - 16) / (size * .58))), text = String(value ?? '').trim();
+    mk('text', {x: cx + 8, y: cy + 17 + size, 'font-size': size, 'font-weight': 600, fill: INK, 'data-sheet': name}, block).textContent =
+      text.length > fit ? text.slice(0, fit - 1) + '…' : text;
+  };
+  cell('TITLE', state.title, x, y, TITLE_BLOCK.w, 17, 'title');
+  mk('path', {d: `M ${x} ${y + split} H ${f.r}`, ...stroke, 'stroke-width': 1.2}, block);
+  let cx = x;
+  for (const [label, name, width] of [['DRAWING NO.', 'number', 160], ['REV', 'revision', 60], ['DATE', 'date', 110], ['DRAWN BY', 'author', 140]]) {
+    if (cx > x) mk('path', {d: `M ${cx} ${y + split} V ${f.b}`, ...stroke, 'stroke-width': 1.2}, block);
+    cell(label, info[name], cx, y + split, width, 13, name);
+    cx += width;
+  }
 }
 
 function renderNodes() {
@@ -1005,6 +1059,13 @@ function renderDrawingProperties(box) {
   box.innerHTML = `
     <div class="panel-title">Drawing</div>
     ${field('Title', 'titleEdit', state.title)}
+    <div class="field-grid">
+      <div>${field('Drawing no.', 'sheetNumber', sheetInfo().number || '', 'data-sheet-field="number"')}</div>
+      <div>${field('Revision', 'sheetRevision', sheetInfo().revision || '', 'data-sheet-field="revision"')}</div>
+      <div>${field('Date', 'sheetDate', sheetInfo().date || '', 'type="date" data-sheet-field="date"')}</div>
+      <div>${field('Drawn by', 'sheetAuthor', sheetInfo().author || '', 'data-sheet-field="author"')}</div>
+    </div>
+    <label class="check"><input type="checkbox" id="sheetFrameToggle" ${sheetInfo().frame ? 'checked' : ''}> Frame and title block</label>
     <div class="panel-title">How to draw</div>
     <ol class="steps">
       <li>Drag symbols from the palette onto the sheet.</li>
@@ -1019,8 +1080,14 @@ function renderDrawingProperties(box) {
       <dt>Arrows</dt><dd>Nudge (Shift: one grid step)</dd><dt>Ctrl+D</dt><dd>Duplicate</dd>
       <dt>R</dt><dd>Rotate selected symbol</dd><dt>F</dt><dd>Zoom to fit</dd>
       <dt>Alt</dt><dd>Ignore snapping · Alt-click a port or bend to remove it</dd>
+      <dt>Alt-drag</dt><dd>Pull a valve or instrument out of its line</dd>
     </dl>`;
-  $('titleEdit').oninput = e => { state.title = e.target.value; $('sheetTitle').textContent = state.title; persist('titleEdit'); };
+  $('titleEdit').oninput = e => { state.title = e.target.value; renderCanvasOnly(); persist('titleEdit'); };
+  const sheet = () => state.sheet ||= {frame: false, number: '', revision: '', date: '', author: ''};
+  box.querySelectorAll('[data-sheet-field]').forEach(input => input.oninput = () => {
+    sheet()[input.dataset.sheetField] = input.value; renderCanvasOnly(); persist('sheet:' + input.id);
+  });
+  $('sheetFrameToggle').onchange = e => { sheet().frame = e.target.checked; renderCanvasOnly(); persist(); };
 }
 
 function renderGroupProperties(box) {
@@ -1136,7 +1203,8 @@ function renderNodeProperties(box, n) {
 
   box.innerHTML = `
     <div class="info"><b>${escapeHtml(name)}</b><br>X ${Math.round(n.x)}, Y ${Math.round(n.y)}</div>
-    ${field('Tag / caption', 'tagEdit', n.tag)}
+    ${isInstrument(n.kind) ? field(`Tag number <span class="muted" id="tagPreview">${escapeHtml(instrumentTag(n))}</span>`, 'numberEdit', n.number ?? '', 'maxlength="6" placeholder="None"') : ''}
+    ${field(isInstrument(n.kind) ? 'Caption' : 'Tag / caption', 'tagEdit', n.tag)}
 
     <div class="panel-title">Connection ports</div>
     <div class="chips">${ports || '<span class="muted">None yet. The Pipe tool adds them as you connect.</span>'}</div>
@@ -1160,6 +1228,10 @@ function renderNodeProperties(box, n) {
       <button class="button danger" id="deleteSelected">Delete</button>
     </div>`;
 
+  if (isInstrument(n.kind)) $('numberEdit').oninput = e => {
+    n.number = e.target.value.trim(); $('tagPreview').textContent = instrumentTag(n);
+    renderCanvasOnly(); persist('numberEdit:' + n.id);
+  };
   $('tagEdit').oninput = e => { n.tag = e.target.value; renderCanvasOnly(); persist('tagEdit:' + n.id); };
   $('notesEdit').oninput = e => { n.notes = e.target.value; persist('notesEdit:' + n.id); };
   $('symbolScale').onchange = e => {
@@ -1192,6 +1264,7 @@ function createNode(kind, x, y, commit = true, bypassSnap = false) {
   const variant = spec.group === 'seal' && kind !== 'seal';
   const n = {id: nextId(), kind: variant ? 'seal' : kind, x: snapCoordinate(x, bypassSnap), y: snapCoordinate(y, bypassSnap), w: spec.w, h: spec.h, tag: spec.tag ?? kind, notes: '', ports: []};
   if (variant) n.sealVariant = kind;
+  if (isInstrument(kind)) n.number = nextTagNumber(kind);
   if (spec.svg) { n.artworkSource = 'media'; n.artworkVersion = spec.version; }
   state.nodes.push(n);
   selected = {type: 'node', id: n.id};
@@ -1213,6 +1286,7 @@ function duplicateNode(n, bypassSnap = false) {
   const copy = structuredClone(n);
   copy.id = nextId();
   copy.x = snapCoordinate(copy.x + 45, bypassSnap); copy.y = snapCoordinate(copy.y + 45, bypassSnap);
+  if (copy.number) copy.number = nextTagNumber(copy.kind);
   state.nodes.push(copy);
   selected = {type: 'node', id: copy.id};
   render(); persist();
@@ -1235,7 +1309,9 @@ function duplicateSelectedNodes(bypassSnap = false) {
     copy.lineId = lineIds.get(lineKey(p));
     return copy;
   });
-  state.nodes.push(...copies); state.pipes.push(...pipes);
+  // Pushed one at a time so each numbered copy takes the next free tag number.
+  for (const copy of copies) { if (copy.number) copy.number = nextTagNumber(copy.kind); state.nodes.push(copy); }
+  state.pipes.push(...pipes);
   selected = {type: 'nodes', ids: copies.map(n => n.id)};
   render(); persist();
 }
@@ -1250,6 +1326,8 @@ function deleteSelected() {
   if (selected.type === 'pipe') state.pipes = state.pipes.filter(p => p.id !== selected.id);
   else {
     const ids = new Set(selectedNodeIds());
+    // A symbol sitting in a line is taken out of it; the line itself stays.
+    for (const n of selectedNodes()) if (pipesOnNode(n.id).every(p => !ids.has(p.a.node === n.id ? p.b.node : p.a.node))) detachFromLine(n);
     state.nodes = state.nodes.filter(n => !ids.has(n.id));
     state.pipes = state.pipes.filter(p => !ids.has(p.a.node) && !ids.has(p.b.node));
   }
@@ -1411,6 +1489,28 @@ function insertionTarget(kind, at, nodeId = null, onlyPipeId = null) {
   return best;
 }
 
+// Takes an inline symbol out of its line: the two pipes meeting at it become one again, and
+// the symbol is left unconnected. Returns false when the symbol is not simply in a line.
+function detachFromLine(n) {
+  const pipes = pipesOnNode(n.id);
+  if (!isInsertable(n.kind) || pipes.length !== 2 || pipes.some(p => p.a.node === p.b.node)) return false;
+  const [first, second] = pipes, portOf = p => p.a.node === n.id ? p.a.port : p.b.port;
+  if (portOf(first) === portOf(second)) return false;
+  // Both routes are read running through the symbol: into it along the first pipe, out along the second.
+  const inward = first.b.node === n.id, outward = second.a.node === n.id;
+  const through = (p, forward) => { const points = pipeRoute(p)?.points.slice(1, -1) || []; return forward ? points : points.reverse(); };
+  const waypoints = [...through(first, inward), ...through(second, outward)];
+  const flip = {forward: 'reverse', reverse: 'forward'};
+  const joined = {
+    ...first, a: inward ? first.a : first.b, b: outward ? second.b : second.a, route: {waypoints},
+    ...(first.direction && !inward ? {direction: flip[first.direction]} : {})
+  };
+  state.pipes.splice(state.pipes.indexOf(first), 1, joined);
+  state.pipes.splice(state.pipes.indexOf(second), 1);
+  n.ports = [];
+  return true;
+}
+
 // Splits the target pipe in two around the symbol and connects both halves to it.
 function insertInlineSymbol(n, target) {
   const pipe = pipeById(target?.pipeId);
@@ -1509,7 +1609,7 @@ svg.addEventListener('pointerdown', e => {
     }
     if (mode === 'pipe' || (pending && pending.node !== n.id)) { pipeFromSymbol(n, e); return; }
     if (selected?.type === 'nodes' && isNodeSelected(n.id)) drag = beginGroupDrag(n, p);
-    else { selected = {type: 'node', id: n.id}; drag = {type: 'node', id: n.id, dx: p.x - n.x, dy: p.y - n.y}; }
+    else { selected = {type: 'node', id: n.id}; drag = {type: 'node', id: n.id, dx: p.x - n.x, dy: p.y - n.y, detach: e.altKey}; }
     render();
     return;
   }
@@ -1528,6 +1628,8 @@ window.addEventListener('pointermove', e => {
     const n = byId(drag.id);
     if (!n) return;
     const p = point(e), raw = {x: p.x - drag.dx, y: p.y - drag.dy};
+    // Alt-drag pulls an inline symbol out of its line.
+    if (drag.detach) { drag.detach = false; drag.detached = detachFromLine(n); }
     insertionPreview = insertionTarget(n.kind, raw, n.id);
     n.x = insertionPreview ? insertionPreview.x : snapCoordinate(raw.x, e.altKey);
     n.y = insertionPreview ? insertionPreview.y : snapCoordinate(raw.y, e.altKey);
@@ -1599,9 +1701,10 @@ function zoom(factor, at = {x: view.x + view.w / 2, y: view.y + view.h / 2}) {
   render();
 }
 function zoomToFit() {
-  const box = contentBox();
+  // With a frame, the whole sheet is what is fitted.
+  const framed = !!sheetInfo().frame, box = framed && state.nodes.length ? sheetBox() : contentBox();
   if (!box) { view = {...HOME_VIEW}; render(); return; }
-  const aspect = HOME_VIEW.h / HOME_VIEW.w, margin = 80;
+  const aspect = HOME_VIEW.h / HOME_VIEW.w, margin = framed ? 20 : 80;
   const w = Math.max(320, Math.min(6000, Math.max(box.r - box.l + 2 * margin, (box.b - box.t + 2 * margin) / aspect)));
   view = {x: (box.l + box.r) / 2 - w / 2, y: (box.t + box.b) / 2 - w * aspect / 2, w, h: w * aspect};
   render();
@@ -1733,6 +1836,9 @@ function exportSize() {
   let left = 0, top = 0, right = HOME_VIEW.w, bottom = HOME_VIEW.h;
   const box = contentBox();
   if (box) { left = Math.min(left, box.l - 85); right = Math.max(right, box.r + 85); top = Math.min(top, box.t - 85); bottom = Math.max(bottom, box.b + 85); }
+  // The sheet grows downwards when the drawing would otherwise run under the title block.
+  const reach = TITLE_BLOCK.inset + 25;
+  if (sheetInfo().frame && box && box.r > right - TITLE_BLOCK.w - reach && box.b > bottom - TITLE_BLOCK.h - reach) bottom = box.b + TITLE_BLOCK.h + reach;
   return {x: Math.floor(left), y: Math.floor(top), w: Math.ceil(right - left), h: Math.ceil(bottom - top)};
 }
 function exportMarkup() {

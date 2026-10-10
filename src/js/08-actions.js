@@ -12,6 +12,7 @@ function createNode(kind, x, y, commit = true, bypassSnap = false) {
   const variant = spec.group === 'seal' && kind !== 'seal';
   const n = {id: nextId(), kind: variant ? 'seal' : kind, x: snapCoordinate(x, bypassSnap), y: snapCoordinate(y, bypassSnap), w: spec.w, h: spec.h, tag: spec.tag ?? kind, notes: '', ports: []};
   if (variant) n.sealVariant = kind;
+  if (isInstrument(kind)) n.number = nextTagNumber(kind);
   if (spec.svg) { n.artworkSource = 'media'; n.artworkVersion = spec.version; }
   state.nodes.push(n);
   selected = {type: 'node', id: n.id};
@@ -33,6 +34,7 @@ function duplicateNode(n, bypassSnap = false) {
   const copy = structuredClone(n);
   copy.id = nextId();
   copy.x = snapCoordinate(copy.x + 45, bypassSnap); copy.y = snapCoordinate(copy.y + 45, bypassSnap);
+  if (copy.number) copy.number = nextTagNumber(copy.kind);
   state.nodes.push(copy);
   selected = {type: 'node', id: copy.id};
   render(); persist();
@@ -55,7 +57,9 @@ function duplicateSelectedNodes(bypassSnap = false) {
     copy.lineId = lineIds.get(lineKey(p));
     return copy;
   });
-  state.nodes.push(...copies); state.pipes.push(...pipes);
+  // Pushed one at a time so each numbered copy takes the next free tag number.
+  for (const copy of copies) { if (copy.number) copy.number = nextTagNumber(copy.kind); state.nodes.push(copy); }
+  state.pipes.push(...pipes);
   selected = {type: 'nodes', ids: copies.map(n => n.id)};
   render(); persist();
 }
@@ -70,6 +74,8 @@ function deleteSelected() {
   if (selected.type === 'pipe') state.pipes = state.pipes.filter(p => p.id !== selected.id);
   else {
     const ids = new Set(selectedNodeIds());
+    // A symbol sitting in a line is taken out of it; the line itself stays.
+    for (const n of selectedNodes()) if (pipesOnNode(n.id).every(p => !ids.has(p.a.node === n.id ? p.b.node : p.a.node))) detachFromLine(n);
     state.nodes = state.nodes.filter(n => !ids.has(n.id));
     state.pipes = state.pipes.filter(p => !ids.has(p.a.node) && !ids.has(p.b.node));
   }
@@ -229,6 +235,28 @@ function insertionTarget(kind, at, nodeId = null, onlyPipeId = null) {
     }
   }
   return best;
+}
+
+// Takes an inline symbol out of its line: the two pipes meeting at it become one again, and
+// the symbol is left unconnected. Returns false when the symbol is not simply in a line.
+function detachFromLine(n) {
+  const pipes = pipesOnNode(n.id);
+  if (!isInsertable(n.kind) || pipes.length !== 2 || pipes.some(p => p.a.node === p.b.node)) return false;
+  const [first, second] = pipes, portOf = p => p.a.node === n.id ? p.a.port : p.b.port;
+  if (portOf(first) === portOf(second)) return false;
+  // Both routes are read running through the symbol: into it along the first pipe, out along the second.
+  const inward = first.b.node === n.id, outward = second.a.node === n.id;
+  const through = (p, forward) => { const points = pipeRoute(p)?.points.slice(1, -1) || []; return forward ? points : points.reverse(); };
+  const waypoints = [...through(first, inward), ...through(second, outward)];
+  const flip = {forward: 'reverse', reverse: 'forward'};
+  const joined = {
+    ...first, a: inward ? first.a : first.b, b: outward ? second.b : second.a, route: {waypoints},
+    ...(first.direction && !inward ? {direction: flip[first.direction]} : {})
+  };
+  state.pipes.splice(state.pipes.indexOf(first), 1, joined);
+  state.pipes.splice(state.pipes.indexOf(second), 1);
+  n.ports = [];
+  return true;
 }
 
 // Splits the target pipe in two around the symbol and connects both halves to it.

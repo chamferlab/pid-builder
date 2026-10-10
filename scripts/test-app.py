@@ -730,6 +730,97 @@ def run_editing_tests(browser):
     assert 'color' not in state()['pipes'][0]
     print('PASS: zoom to fit and default line colour', flush=True)
 
+    # An inline symbol can be pulled out of its line with Alt-drag, or deleted; the line heals.
+    line = dict(title='Inline', nodes=[
+        dict(id='n0', kind='PI', x=200, y=400, w=90, h=90, tag='A', notes='', ports=[dict(id='P1', x=45, y=0, custom=True)]),
+        dict(id='n1', kind='PI', x=1100, y=400, w=90, h=90, tag='B', notes='', ports=[dict(id='P1', x=-45, y=0, custom=True)]),
+    ], pipes=[dict(id='n2', lineId='n2', a=dict(node='n0', port='P1'), b=dict(node='n1', port='P1'), color='red', direction='forward', lineNumber='L-7')], nextId=3, sealSvg=None, portModeVersion=3)
+
+    def drop_valve():
+        load(line)
+        b.js('document.querySelector(`[data-kind="isolation-valve"]`).click();return true')
+        drag(750, 450, 650, 400)
+        assert len(state()['pipes']) == 2 and len(state()['nodes'][2]['ports']) == 2
+        return state()
+
+    def healed(pipes):
+        assert len(pipes) == 1
+        pipe = pipes[0]
+        assert (pipe['a'], pipe['b']) == (dict(node='n0', port='P1'), dict(node='n1', port='P1'))
+        assert (pipe['color'], pipe['direction'], pipe['lineNumber']) == ('red', 'forward', 'L-7')
+        assert wire_points() == [[245, 400], [1055, 400]]
+
+    inline = drop_valve()
+    drag(650, 400, 650, 600, altKey=True)
+    after = state()
+    healed(after['pipes'])
+    assert after['nodes'][2]['ports'] == [] and after['nodes'][2]['y'] == 600 and len(after['nodes']) == 3
+    click('undo')
+    assert state() == inline, 'pulling a symbol out of a line is one undo step'
+    drag(650, 400, 700, 400)
+    assert len(state()['pipes']) == 2, 'a plain drag keeps the symbol in its line'
+    drop_valve()
+    key('Delete')
+    healed(state()['pipes'])
+    assert len(state()['nodes']) == 2
+    print('PASS: Alt-drag and Delete take an inline symbol out of its line', flush=True)
+
+    # Instruments are numbered per type as they are placed; the number shows in the bubble.
+    def type_into(element_id, value):
+        b.js("const el=document.getElementById(arguments[0]);el.value=arguments[1];el.dispatchEvent(new Event('input',{bubbles:true}));return true", [element_id, value])
+
+    def numbers():
+        return [(n['kind'], n.get('number')) for n in state()['nodes']]
+
+    load(dict(title='Old drawing', nodes=[dict(id='n0', kind='PI', x=300, y=300, w=90, h=90, tag='PI', notes='', ports=[])], pipes=[], nextId=1, sealSvg=None, portModeVersion=3))
+    assert numbers() == [('PI', None)] and not b.js("return !!document.querySelector('.tag-number')")
+    assert not b.js("return !!document.querySelector('.sheet-frame')"), 'a drawing saved without sheet data has no frame'
+    load(dict(title='Numbered', nodes=[], pipes=[], nextId=1, sealSvg=None, portModeVersion=3))
+    for kind in ['PI', 'PI', 'TT']:
+        b.js('document.querySelector(`[data-kind="${arguments[0]}"]`).click();return true', [kind])
+    assert numbers() == [('PI', '101'), ('PI', '102'), ('TT', '101')]
+    assert b.js("return [...document.querySelectorAll('.tag-number')].map(t=>t.textContent)") == ['101', '102', '101']
+    type_into('numberEdit', '2')
+    type_into('numberEdit', '205')
+    assert numbers()[2] == ('TT', '205') and b.js("return document.getElementById('tagPreview').textContent") == 'TT-205'
+    click('undo')
+    assert numbers()[2] == ('TT', '101'), 'typing a tag number is one undo step'
+    click('redo')
+    b.js("document.querySelector('[data-kind=TT]').click();return true")
+    key('d', ctrlKey=True)
+    assert numbers()[3:] == [('TT', '206'), ('TT', '207')], 'new and duplicated instruments take the next free number'
+    type_into('numberEdit', '')
+    assert numbers()[4] == ('TT', '') and len(b.js("return [...document.querySelectorAll('.tag-number')].map(t=>t.textContent)")) == 4
+    print('PASS: instrument tag numbers', flush=True)
+
+    # A new drawing has a frame and title block, shown on the sheet and exported with it.
+    load(dict(title='Blank', nodes=[], pipes=[], nextId=1, sealSvg=None, portModeVersion=3))
+    click('newProject')
+    assert state()['sheet']['frame'] is True and b.js("return !!document.querySelector('.sheet-frame')")
+    type_into('titleEdit', 'Plan 53B loop')
+    type_into('sheetNumber', 'SL-001')
+    type_into('sheetRevision', 'B')
+    type_into('sheetAuthor', 'A very long name that cannot fit in its cell')
+    block = b.js("return Object.fromEntries([...document.querySelectorAll('.title-block [data-sheet]')].map(t=>[t.dataset.sheet,t.textContent]))")
+    assert block['title'] == 'Plan 53B loop' and block['number'] == 'SL-001' and block['revision'] == 'B' and block['date'] == ''
+    assert block['author'].endswith('…') and len(block['author']) < 20
+    assert state()['sheet'] == dict(frame=True, number='SL-001', revision='B', date='', author='A very long name that cannot fit in its cell')
+    exported = b.async_js("""const done=arguments[arguments.length-1],original=URL.createObjectURL;URL.createObjectURL=function(blob){blob.text().then(markup=>{const doc=new DOMParser().parseFromString(markup,'image/svg+xml'),f=doc.querySelector('.sheet-frame');
+        done({view:doc.documentElement.getAttribute('viewBox'),frame:['x','y','width','height'].map(k=>+f.getAttribute(k)),number:doc.querySelector('[data-sheet=number]').textContent,editor:doc.querySelectorAll('.editor-only').length})});return original.call(this,blob)};document.getElementById('exportSVG').click();URL.createObjectURL=original;""")
+    assert exported == dict(view='0 0 1500 900', frame=[12, 12, 1476, 876], number='SL-001', editor=0)
+    # A symbol in the title block's corner makes the sheet taller instead of being covered.
+    b.js("document.querySelector('[data-kind=reservoir]').click();return true")
+    drag(750, 450, 1300, 780)
+    frame = b.js("const f=document.querySelector('.sheet-frame'),t=document.querySelector('.title-block rect');return {bottom:+f.getAttribute('y')+ +f.getAttribute('height'),block:+t.getAttribute('y')}")
+    node = state()['nodes'][0]
+    assert frame['block'] > node['y'] + node['h'] / 2, 'title block clears the symbol'
+    press(200, 200)  # deselect, so Properties shows the drawing
+    click('sheetFrameToggle')
+    assert state()['sheet']['frame'] is False and not b.js("return !!document.querySelector('.sheet-frame')")
+    click('undo')
+    assert state()['sheet']['frame'] is True and b.js("return !!document.querySelector('.sheet-frame')")
+    print('PASS: frame and title block on the sheet and in exports', flush=True)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

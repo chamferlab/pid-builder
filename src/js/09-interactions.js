@@ -74,7 +74,7 @@ svg.addEventListener('pointerdown', e => {
     }
     if (mode === 'pipe' || (pending && pending.node !== n.id)) { pipeFromSymbol(n, e); return; }
     if (selected?.type === 'nodes' && isNodeSelected(n.id)) drag = beginGroupDrag(n, p);
-    else { selected = {type: 'node', id: n.id}; drag = {type: 'node', id: n.id, dx: p.x - n.x, dy: p.y - n.y}; }
+    else { selected = {type: 'node', id: n.id}; drag = {type: 'node', id: n.id, dx: p.x - n.x, dy: p.y - n.y, detach: e.altKey}; }
     render();
     return;
   }
@@ -93,6 +93,8 @@ window.addEventListener('pointermove', e => {
     const n = byId(drag.id);
     if (!n) return;
     const p = point(e), raw = {x: p.x - drag.dx, y: p.y - drag.dy};
+    // Alt-drag pulls an inline symbol out of its line.
+    if (drag.detach) { drag.detach = false; drag.detached = detachFromLine(n); }
     insertionPreview = insertionTarget(n.kind, raw, n.id);
     n.x = insertionPreview ? insertionPreview.x : snapCoordinate(raw.x, e.altKey);
     n.y = insertionPreview ? insertionPreview.y : snapCoordinate(raw.y, e.altKey);
@@ -164,9 +166,10 @@ function zoom(factor, at = {x: view.x + view.w / 2, y: view.y + view.h / 2}) {
   render();
 }
 function zoomToFit() {
-  const box = contentBox();
+  // With a frame, the whole sheet is what is fitted.
+  const framed = !!sheetInfo().frame, box = framed && state.nodes.length ? sheetBox() : contentBox();
   if (!box) { view = {...HOME_VIEW}; render(); return; }
-  const aspect = HOME_VIEW.h / HOME_VIEW.w, margin = 80;
+  const aspect = HOME_VIEW.h / HOME_VIEW.w, margin = framed ? 20 : 80;
   const w = Math.max(320, Math.min(6000, Math.max(box.r - box.l + 2 * margin, (box.b - box.t + 2 * margin) / aspect)));
   view = {x: (box.l + box.r) / 2 - w / 2, y: (box.t + box.b) / 2 - w * aspect / 2, w, h: w * aspect};
   render();
