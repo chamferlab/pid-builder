@@ -765,6 +765,81 @@ def run_editing_tests(browser):
     assert len(state()['nodes']) == 2
     print('PASS: Alt-drag and Delete take an inline symbol out of its line', flush=True)
 
+    # Templates: save a selection, place copies, edit, rename, export, import, delete.
+    TEMPLATES = 'seal-loop-pid-templates-v1'
+
+    def stored_templates():
+        return b.js("return JSON.parse(localStorage.getItem(arguments[0])||'[]')", [TEMPLATES])
+
+    def answer(text):
+        b.js("window.prompt=()=>arguments[0];window.confirm=()=>true;return true", [text])
+
+    loop = dict(title='Loop', nodes=[
+        dict(id='n0', kind='cooler', x=400, y=400, w=130, h=200, tag='COOLER', notes='', ports=[dict(id='P1', x=65, y=-40, custom=True)], artworkSource='media'),
+        dict(id='n1', kind='PI', x=800, y=360, w=90, h=90, tag='PI', number='101', notes='', ports=[dict(id='P1', x=-45, y=0, custom=True), dict(id='P2', x=45, y=0, custom=True)]),
+        dict(id='n2', kind='reservoir', x=1200, y=400, w=170, h=215, tag='RESERVOIR', notes='', ports=[dict(id='P1', x=-85, y=-40, custom=True)], artworkSource='media'),
+    ], pipes=[
+        dict(id='n3', lineId='n3', a=dict(node='n0', port='P1'), b=dict(node='n1', port='P1'), color='blue', lineNumber='L-1'),
+        dict(id='n4', lineId='n4', a=dict(node='n1', port='P2'), b=dict(node='n2', port='P1')),
+    ], nextId=5, sealSvg=None, portModeVersion=3)
+    load(loop)
+    loop = state()  # as loaded, with current artwork versions
+    assert stored_templates() == [] and b.js("return !!document.querySelector('#templatePalette .palette-hint')")
+    drag(300, 250, 900, 550, shiftKey=True)  # the cooler and the PI, not the reservoir
+    answer('Cooler leg')
+    click('saveTemplate')
+    saved = stored_templates()
+    assert [t['name'] for t in saved] == ['Cooler leg']
+    assert [n['kind'] for n in saved[0]['nodes']] == ['cooler', 'PI'] and len(saved[0]['pipes']) == 1, 'only pipes between the saved symbols are kept'
+    assert b.js("return document.querySelectorAll('#templatePalette [data-template] svg image, #templatePalette [data-template] svg circle').length") >= 2
+    assert state() == loop, 'saving a template does not change the drawing'
+    b.js("document.querySelector('#templatePalette [data-template]').click();return true")
+    placed = state()
+    assert len(placed['nodes']) == 5 and len(placed['pipes']) == 3
+    copy_cooler, copy_pi = placed['nodes'][3:]
+    assert copy_pi['number'] == '102' and copy_pi['x'] - copy_cooler['x'] == 400 and copy_pi['y'] - copy_cooler['y'] == -40
+    assert placed['pipes'][2]['a']['node'] == copy_cooler['id'] and placed['pipes'][2]['lineNumber'] == 'L-1' and placed['pipes'][2]['lineId'] == placed['pipes'][2]['id']
+    click('undo')
+    assert state() == loop, 'placing a template is one undo step'
+    click('redo')
+
+    # Editing opens the template as its own drawing and brings the previous drawing back afterwards.
+    press(100, 100)
+    b.js("document.querySelector('[data-template-edit]').click();return true")
+    editing = state()
+    assert editing['templateId'] == saved[0]['id'] and editing['title'] == 'Cooler leg' and len(editing['nodes']) == 2
+    assert not b.js("return document.getElementById('templateBar').hidden") and b.js("return document.getElementById('undo').disabled")
+    b.js('document.querySelector(`[data-kind="TT"]`).click();return true')
+    corner = b.js("return document.getElementById('drawing').getAttribute('viewBox').split(' ').map(Number)")
+    press(corner[0] + 5, corner[1] + 5)  # deselect; the view was fitted to the template
+    type_title = "const el=document.getElementById('titleEdit');el.value=arguments[0];el.dispatchEvent(new Event('input',{bubbles:true}));return true"
+    b.js(type_title, ['Cooler leg with TT'])
+    click('templateSave')
+    assert state() == placed, 'the drawing set aside during editing is restored'
+    assert b.js("return document.getElementById('templateBar').hidden")
+    edited = stored_templates()
+    assert [(t['id'], t['name'], len(t['nodes'])) for t in edited] == [(saved[0]['id'], 'Cooler leg with TT', 3)]
+    b.js("document.querySelector('[data-template-edit]').click();return true")
+    b.js("document.querySelector('[data-kind=PT]').click();return true")
+    click('templateClose')
+    assert state() == placed and stored_templates() == edited, 'closing without saving changes nothing'
+
+    # Rename in the list, then export, delete, and import.
+    b.js("const el=document.querySelector('[data-template-name]');el.value='Leg A';el.onchange();return true")
+    assert stored_templates()[0]['name'] == 'Leg A' and b.js("return document.querySelector('#templatePalette [data-template] b').textContent") == 'Leg A'
+    exported = b.async_js("""const done=arguments[arguments.length-1],original=URL.createObjectURL;URL.createObjectURL=function(blob){blob.text().then(done);return original.call(this,blob)};document.getElementById('templatesExport').click();URL.createObjectURL=original;""")
+    assert json.loads(exported)['templates'] == stored_templates()
+    answer('')
+    b.js("document.querySelector('[data-template-delete]').click();return true")
+    assert stored_templates() == [] and not b.js("return !!document.querySelector('#templatePalette [data-template]')")
+    b.async_js("""const done=arguments[arguments.length-1],input=document.getElementById('templateFile'),dt=new DataTransfer();dt.items.add(new File([arguments[0]],'t.json',{type:'application/json'}));input.files=dt.files;input.onchange({target:input}).then(()=>done(true));""", [exported])
+    assert [(t['name'], len(t['nodes'])) for t in stored_templates()] == [('Leg A', 3)]
+    b.call('WebDriver:Navigate', {'url': url})
+    assert b.js("return document.querySelector('#templatePalette [data-template] b').textContent") == 'Leg A', 'templates survive a reload'
+    b.js("localStorage.removeItem(arguments[0]);return true", [TEMPLATES])
+    b.call('WebDriver:Navigate', {'url': url})
+    print('PASS: templates are saved, placed, edited, renamed, exported, and imported', flush=True)
+
     # Instruments are numbered per type as they are placed; the number shows in the bubble.
     def type_into(element_id, value):
         b.js("const el=document.getElementById(arguments[0]);el.value=arguments[1];el.dispatchEvent(new Event('input',{bubbles:true}));return true", [element_id, value])

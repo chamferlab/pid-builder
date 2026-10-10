@@ -19,7 +19,7 @@
         <button id="undo" title="Undo (Ctrl/Cmd+Z)" disabled>↶ Undo</button>
         <button id="redo" title="Redo (Ctrl/Cmd+Shift+Z or Ctrl+Y)" disabled>↷ Redo</button>
       </div>
-      <div class="group">
+      <div class="group" id="fileGroup">
         <button id="newProject" title="Start with an empty canvas">New</button>
         <label title="Open a saved project (JSON)">Open<input id="projectFile" type="file" accept=".json,application/json"></label>
         <button id="saveProject" title="Download an editable project file (JSON)">Save</button>
@@ -36,6 +36,7 @@
 
   <aside class="palette">
     <input id="paletteSearch" class="text" type="search" placeholder="Search symbols" aria-label="Search symbols">
+    <div class="section">Templates</div><div class="tiles seals" id="templatePalette"></div>
     <div class="section">Mechanical seals</div><div class="tiles seals" id="sealPalette"></div>
     <div class="section">Instruments</div><div class="tiles" id="instrumentPalette"></div>
     <div class="section">Equipment and piping</div><div class="tiles" id="equipmentPalette"></div>
@@ -59,6 +60,12 @@
     </div>
     <div class="canvas-wrap" id="canvasWrap">
       <svg id="drawing" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 900" aria-label="P and ID drawing canvas"></svg>
+      <div class="template-bar" id="templateBar" hidden>
+        <span>Editing template <b id="templateBarName"></b></span>
+        <button class="button" id="templateSave">Save template</button>
+        <button class="button" id="templateClose">Close without saving</button>
+      </div>
+      <input id="templateFile" type="file" accept=".json,application/json" hidden>
       <div class="empty-hint" id="emptyHint"><b>Start by dragging a symbol onto the sheet</b>Then choose <kbd>Pipe</kbd> and click two symbols to connect them.</div>
     </div>
   </main>

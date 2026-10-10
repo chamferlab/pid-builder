@@ -33,13 +33,15 @@ function renderCanvas() {
   renderNodes();
   renderSheet();
   renderOverlay();
-  $('sheetTitle').textContent = state.title;
+  $('sheetTitle').textContent = $('templateBarName').textContent = state.title;
 }
 function render() {
   renderCanvas();
   $('count').textContent = `${state.nodes.length} symbols · ${state.pipes.length} pipes`;
   $('zoomReset').textContent = `${Math.round(HOME_VIEW.w / view.w * 100)}%`;
   $('emptyHint').hidden = state.nodes.length > 0;
+  $('templateBar').hidden = !state.templateId;
+  document.body.classList.toggle('editing-template', !!state.templateId);
   setStatus(statusText());
   for (const [id, toolMode] of [['toolSelect', 'select'], ['toolPipe', 'pipe'], ['addSealPort', 'addPort']]) {
     $(id).classList.toggle('active', mode === toolMode);

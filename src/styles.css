@@ -90,6 +90,8 @@ aside { background: var(--panel); overflow: auto; padding: 12px; }
 .glyph img, .glyph svg { display: block; width: 40px; height: 36px; object-fit: contain; }
 .seals .glyph, .seals .glyph img { width: 96px; height: 58px; }
 .seals .glyph svg { width: 44px; height: 40px; }
+.item.template .glyph, .item.template .glyph svg { width: 96px; height: 58px; }
+.palette-hint { grid-column: 1 / -1; margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); }
 #instrumentPalette { grid-template-columns: repeat(4, 1fr); }
 #instrumentPalette .item b { display: none; }
 .bubble {
@@ -227,3 +229,16 @@ button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--dan
   .brand { display: none; }
   #status { display: none; }
 }
+
+/* ---- Templates ---- */
+.template-row { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; margin-bottom: 4px; }
+.template-row .button { padding: 5px 8px; }
+.template-bar {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2;
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px;
+  border: 1px solid #e3c36a; border-radius: 8px; background: #fff7dc; color: #5a4300;
+  font-size: 12px; box-shadow: 0 2px 8px rgba(20, 40, 60, .12); white-space: nowrap;
+}
+.template-bar[hidden] { display: none; }
+/* The drawing set aside while a template is edited must not be replaced from the toolbar. */
+.editing-template #fileGroup { opacity: .4; pointer-events: none; }

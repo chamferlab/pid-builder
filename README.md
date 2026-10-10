@@ -1,20 +1,21 @@
 # Seal Loop P&ID Builder
 
-An offline, single-file HTML prototype for drawing mechanical seal support loops. Start with an empty canvas, drag in symbols, connect their ports with orthogonal pipes, and export the drawing as SVG or PNG. Supplied SVG artwork is embedded in the HTML.
+An offline, single-file HTML prototype for drawing mechanical seal support loops. Start with an empty canvas, drag in symbols, connect them with orthogonal pipes, number the instruments, keep recurring arrangements as templates, and export the drawing with its frame and title block as SVG or PNG. All artwork is embedded in the HTML.
 
 ## Run it
 
 Open [`PID-Builder.html`](PID-Builder.html) in a desktop browser. No installation, server, account, or network connection is required.
 
-The browser restores the last drawing automatically. Choose **New drawing** for an empty canvas; save your existing drawing first if you want to keep it. After updating the HTML, reload the page to use the latest controls and symbols.
+The browser restores the last drawing automatically. Choose **New** for an empty canvas; save your existing drawing first if you want to keep it. After updating the HTML, reload the page to use the latest controls and symbols.
 
 ## Build a loop
 
 1. Drag a symbol from the left palette onto the sheet. Clicking a palette item places it at the center of the view. Use the search box to filter the palette.
 2. Choose **Pipe** (or press **P**), click the symbol where the pipe starts, then click the symbol where it ends. A connection port is created at each point you click, and the pipe is routed between them. The Pipe tool stays active so you can keep connecting; press **Esc** when done.
 3. Drag symbols to reposition them. Connected pipes follow and re-route.
-4. Drop a valve, instrument, or junction onto a pipe to insert it.
-5. Select a pipe to set its line data, color, flow arrow, and route. Select a symbol to edit its caption, notes, size, and orientation. Click blank space to edit the drawing title.
+4. Drop a valve, instrument, or junction onto a pipe to insert it. Alt-drag it off the pipe to take it out again.
+5. Select a pipe to set its line data, color, flow arrow, and route. Select a symbol to edit its caption, notes, size, and orientation, and an instrument's tag number.
+6. Click blank space to fill in the title block and manage templates. Select a group you will need again and choose **Save as template**.
 
 ### Connecting
 
@@ -48,7 +49,7 @@ Click a symbol, then **Shift-click** others to add or remove them from the selec
 
 With several symbols selected, use **Properties → Align symbols** to align their left edges, horizontal centers, right edges, top edges, vertical centers, or bottom edges. The first selected symbol is the reference and stays in place. Alignment uses the visible symbol bounds, including rotation and size.
 
-**Duplicate** (or **Ctrl/Cmd+D**) copies the symbols and any pipes between them, offset as a group. **Delete** removes the group and its connected pipes. Group moves, alignment, duplication, and deletion each form one undo step.
+**Duplicate** (or **Ctrl/Cmd+D**) copies the symbols and any pipes between them, offset as a group. **Delete** removes the group and its connected pipes; a single valve, instrument, or two-way junction sitting in a line is taken out of the line instead, and the line stays. Group moves, alignment, duplication, and deletion each form one undo step.
 
 ### Snap symbols to the grid
 
@@ -65,6 +66,7 @@ Drop an instrument, isolation valve, check valve, or pipe junction onto an exist
 - An inserted check valve points in the pipe's flow direction when an arrow is set. Rotate or mirror it to change the direction later.
 - Resized symbols fit using their current size; insertion aligns them with the target line.
 - Moving a connected symbol retains its existing connections.
+- To take a symbol out of its line, hold **Alt** and drag it off the pipe, or select it and press **Delete**. The two sections become one pipe again, keeping the line's number, color, flow arrow, and bends. The symbol is left without ports and can be dropped onto another pipe, even in the same drag. Alt also suspends snapping, so a connected inline symbol cannot be Alt-dragged to an off-grid position.
 - Both resulting pipe sections inherit the original line color.
 
 ### Resize, rotate, and mirror
@@ -77,7 +79,7 @@ Select any symbol and use **Properties**:
 | **Rotate left / right 90°** | Rotates the artwork and its ports around the symbol center. **R** rotates right, **Shift+R** left. |
 | **Mirror horizontally / vertically** | Reflects the artwork and ports in the chosen canvas direction. |
 | **Reset** | Restores the original size and clears rotation and mirroring. |
-| **Duplicate** | Copies artwork, ports, captions, notes, size, rotation, and mirroring. |
+| **Duplicate** | Copies artwork, ports, captions, notes, size, rotation, and mirroring. A numbered instrument's copy takes the next free tag number. |
 
 Attached pipe endpoints follow the transformed ports. Instrument labels and captions stay upright. Transformations are retained in saved projects and exports.
 
@@ -98,6 +100,20 @@ Select a pipe and choose **Properties → Appearance → Instrument air** for a 
 ### Pipe flow direction
 
 Select a pipe and choose **Properties → Flow arrow** to show an arrow from its first connected port to its second, reverse the arrow, or remove it. The panel names both ports. The arrow follows the pipe's longest straight segment when you move symbols or bends, matches the line color, and appears in saved projects and SVG/PNG exports. Existing pipes have no arrow until you set one. Inserting an instrument or junction into a directed pipe carries its direction onto both new sections.
+
+## Templates
+
+A template is a piece of drawing you keep for reuse: symbols with their ports, and the pipes between them, for example a dual seal with its cooler.
+
+| To | Do this |
+| --- | --- |
+| Create a template | Select the symbols (Shift-drag an area, or Ctrl+A), choose **Save as template** in Properties, and name it. Pipes are kept when both ends are in the selection. Saving under an existing name replaces that template. |
+| Use it | Click its tile at the top of the palette, or drag the tile onto the sheet. The copy is ordinary drawing content; instruments in it take the next free tag numbers. |
+| Change it | With nothing selected, find it under **Properties → Templates** and choose **Edit**. The template opens as a drawing of its own and the drawing you were working on is set aside. **Save template** or **Close without saving** brings your drawing back. The title is the template's name. |
+| Rename or delete it | Use the name field and the × button in the same list. Drawings that already used the template are not affected. |
+| Back up or share | **Export** downloads every template as `seal-loop-templates.json`; **Import** adds the templates in such a file, replacing those with the same name. |
+
+Templates are stored in the browser, next to the autosaved drawing. They belong to that browser and to the location of `PID-Builder.html`: another browser, another computer, a moved file, or cleared site data starts with none. The exported file is the backup.
 
 ## Frame and title block
 
@@ -123,9 +139,9 @@ Drawings saved with earlier equipment artwork open with the new symbols. Where a
 
 Use **Undo** and **Redo** in the toolbar, **Ctrl/Cmd+Z** to undo, and **Ctrl/Cmd+Shift+Z** or **Ctrl+Y** to redo. The builder remembers up to 100 drawing edits during the current session.
 
-Adding, deleting, connecting, inserting, moving, routing, transforming, recoloring, setting pipe direction, editing line data, importing seal artwork, and editing captions or notes can be reversed. Deleting a symbol and its connected pipes is one action; dragging a symbol or pipe bend is one action; consecutive typing in one field is grouped into one edit. Pan, zoom, and selection do not add undo steps. A new edit after undo clears the redo history.
+Adding, deleting, connecting, inserting, taking a symbol out of a line, placing a template, moving, routing, transforming, recoloring, setting pipe direction, editing line data, tag numbers, and title block fields, importing seal artwork, and editing captions or notes can be reversed. Deleting a symbol and its connected pipes is one action; dragging a symbol or pipe bend is one action; consecutive typing in one field is grouped into one edit. Pan, zoom, and selection do not add undo steps. A new edit after undo clears the redo history.
 
-Keyboard shortcuts inside text fields retain the browser's normal text-editing behavior; use the toolbar to undo a drawing edit while a field is focused. History resets when starting a new drawing, opening a project, or reloading the page, and is not included in saved project JSON. Undo and redo autosave the restored drawing.
+Keyboard shortcuts inside text fields retain the browser's normal text-editing behavior; use the toolbar to undo a drawing edit while a field is focused. The template library is not part of the history: saving, renaming, and deleting a template cannot be undone. History resets when starting a new drawing, opening a project, opening or closing a template for editing, or reloading the page, and is not included in saved project JSON. Undo and redo autosave the restored drawing.
 
 ## Other controls
 
@@ -135,9 +151,9 @@ Keyboard shortcuts inside text fields retain the browser's normal text-editing b
 | Take a symbol out of a line | Alt-drag a valve, instrument, or two-way junction off the pipe, or select it and press Delete. The two sections become one pipe again and keep the line's number, colour, and flow arrow. |
 | Remove a port | Select its symbol and click the port's chip in Properties, or Alt-click the port. Connected pipes on that port are removed too. |
 | Pan | Drag empty sheet space, or drag with the middle mouse button. |
-| Zoom | Use the mouse wheel or the `−`, `%`, and `+` buttons. **Fit** (or **F**) shows the whole drawing. |
+| Zoom | Use the mouse wheel or the `−`, `%`, and `+` buttons. **Fit** (or **F**) shows the whole sheet when the frame is on, otherwise everything drawn. |
 | Cancel a connection, port placement, or insertion preview | Press Esc. |
-| Delete a selected pipe or symbol | Press Delete/Backspace or use **Delete** in Properties. |
+| Delete a selected pipe or symbol | Press Delete/Backspace or use **Delete** in Properties. Deleting a symbol removes its pipes, except for an inline symbol, whose line is rejoined. |
 | Select several symbols | Shift-click symbols, Shift-drag an area, or press Ctrl/Cmd+A to select all. |
 | Switch tools | **V** Select, **P** Pipe, **Esc** back to Select. |
 
@@ -149,12 +165,13 @@ Older saved drawings are converted once when opened: predefined ports on seals, 
 
 | Command | Result |
 | --- | --- |
-| **Save project** | Downloads editable JSON with symbols, ports, connections, routes, line data, colors, transformations, captions, and notes. |
+| **Save project** | Downloads editable JSON with symbols, ports, connections, routes, line data, colors, transformations, captions, tag numbers, notes, and the title block fields. Templates are not in it; they have their own export. |
 | **Open project** | Loads a saved project JSON. |
-| **Export SVG** | Downloads a clean drawing with embedded SVG artwork and line colors, without the grid, handles, previews, or selection marks. |
-| **Export PNG** | Downloads a raster image at twice the drawing's SVG dimensions. |
+| **Export SVG** | Downloads a clean drawing with embedded SVG artwork, line colors, and the frame and title block when they are on, without the grid, handles, previews, or selection marks. |
+| **Export PNG** | Downloads a raster image of the same sheet at twice the SVG dimensions. |
+| **Templates → Export / Import** | Downloads or loads the template library as `seal-loop-templates.json`. See [Templates](#templates). |
 
-Browser storage is local and can be cleared; **Save project** is the portable backup. Drawings are not shared with colleagues or uploaded to a server. Exports of imported SVGs may depend on fonts or external references in those files.
+Browser storage is local and can be cleared; **Save project** is the portable backup of a drawing, and the template export is the backup of your templates. Drawings are not shared with colleagues or uploaded to a server. Exports of imported SVGs may depend on fonts or external references in those files.
 
 ## Project files and development
 
@@ -163,7 +180,7 @@ Browser storage is local and can be cleared; **Save project** is the portable ba
 - `PID-Builder.html` — the complete offline application, built from the files below.
 - `src/index.html`, `src/styles.css` — page layout and styling.
 - `src/js/` — the application, concatenated in filename order into one script:
-  `01-catalog` (symbols and constants), `02-state` (drawing state, undo, autosave), `03-geometry`, `04-routing` (pipe routes), `05-symbols` (built-in artwork), `06-render`, `07-inspector` (Properties panel), `08-actions` (edits), `09-interactions` (pointer and keyboard), `10-io` (save, open, import, export), `11-main` (palette and startup).
+  `01-catalog` (symbols and constants), `02-state` (drawing state, undo, autosave), `03-geometry`, `04-routing` (pipe routes), `05-symbols` (built-in artwork), `06-render`, `07-inspector` (Properties panel), `08-actions` (edits), `09-interactions` (pointer and keyboard), `10-io` (save, open, import, export), `10-templates` (template library, editing, and its file), `11-main` (palette and startup).
 - `media/` — source SVGs for the seals and all equipment.
 - `scripts/build.py` — builds `PID-Builder.html`; standard library only.
 - `scripts/test-app.py` — Firefox regression tests; standard library only.
@@ -175,10 +192,26 @@ python3 scripts/test-app.py   # needs Firefox
 
 After editing an SVG in `media/`, rebuild and reload the page. Equipment needs nothing else. The seal drawings sit on a larger Inkscape page and are cropped using the bounds recorded in `BOUNDS` in `scripts/build.py`; update those if a seal's size or position on its page changes. To add an equipment symbol, add its SVG to `media/` and an entry to `EQUIPMENT` in the build script.
 
-The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion, line data, snapping, export, the Pipe tool, automatic routing, area selection, and keyboard editing.
+The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, and templates. Dragging a template tile onto the sheet and the PNG export are not covered.
 
 ## Current scope
 
-This is a drawing prototype, not a validated P&ID or an API-plan generator. Automatic routing avoids symbols but not other pipes, so parallel runs can overlap until you move one. Automatic insertion currently supports instruments, isolation valves, check valves, and pipe junctions.
+This is a drawing prototype, not a validated P&ID or an API-plan generator. Known limits:
 
-Future improvements include more line types, pipe-to-pipe spacing, instrument tag numbers, a title block, and drawing validation.
+- Automatic routing avoids symbols but not other pipes, so parallel runs can overlap until you move one, and crossings are not marked.
+- Every symbol starts without ports, including equipment whose artwork shows nozzles.
+- Tag numbers run per instrument type; instruments of one loop share a number only if you set it.
+- Templates live in one browser and travel only through their export file.
+- The equipment symbols follow common conventions but have not been checked against a drawing standard.
+
+## Next steps
+
+In planned order:
+
+1. **Default ports on equipment** — ports already placed on the nozzles drawn in each symbol, so a cooler or reservoir connects in one click.
+2. **Alignment guides** — lines that appear while dragging when a symbol lines up with another's center or edge.
+3. **Pipes that respect each other** — spacing between parallel runs and a hop mark where pipes cross.
+4. **PDF export** of the framed sheet.
+5. **Built-in seal plan templates** (Plan 52, 53A, 53B, 54) shipped inside the HTML, once the user templates have settled.
+
+Smaller items: line size and spec shown on the pipe, a legend generated from the symbols used, more title block fields, and drawing validation.

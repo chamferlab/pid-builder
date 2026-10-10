@@ -26,6 +26,7 @@ function renderDrawingProperties(box) {
       <div>${field('Drawn by', 'sheetAuthor', sheetInfo().author || '', 'data-sheet-field="author"')}</div>
     </div>
     <label class="check"><input type="checkbox" id="sheetFrameToggle" ${sheetInfo().frame ? 'checked' : ''}> Frame and title block</label>
+    ${templatePanelMarkup()}
     <div class="panel-title">How to draw</div>
     <ol class="steps">
       <li>Drag symbols from the palette onto the sheet.</li>
@@ -47,6 +48,7 @@ function renderDrawingProperties(box) {
   box.querySelectorAll('[data-sheet-field]').forEach(input => input.oninput = () => {
     sheet()[input.dataset.sheetField] = input.value; renderCanvasOnly(); persist('sheet:' + input.id);
   });
+  wireTemplatePanel(box);
   $('sheetFrameToggle').onchange = e => { sheet().frame = e.target.checked; renderCanvasOnly(); persist(); };
 }
 
@@ -64,9 +66,11 @@ function renderGroupProperties(box) {
     <div class="button-grid">
       <button class="button" id="duplicateGroup">Duplicate</button>
       <button class="button danger" id="deleteSelected">Delete</button>
-    </div>`;
+    </div>
+    <button class="button block" id="saveTemplate" title="Keep these symbols and the pipes between them for reuse">Save as template</button>`;
   box.querySelectorAll('[data-align]').forEach(button => button.onclick = () => { const [axis, edge] = button.dataset.align.split(':'); alignSelected(axis, edge); });
   $('duplicateGroup').onclick = e => duplicateSelectedNodes(e.altKey);
+  $('saveTemplate').onclick = saveSelectionAsTemplate;
   $('deleteSelected').onclick = deleteSelected;
 }
 
@@ -186,7 +190,8 @@ function renderNodeProperties(box, n) {
     <div class="button-grid">
       <button class="button" id="duplicateSelected">Duplicate</button>
       <button class="button danger" id="deleteSelected">Delete</button>
-    </div>`;
+    </div>
+    <button class="button block" id="saveTemplate" title="Keep this symbol with its ports for reuse">Save as template</button>`;
 
   if (isInstrument(n.kind)) $('numberEdit').oninput = e => {
     n.number = e.target.value.trim(); $('tagPreview').textContent = instrumentTag(n);
@@ -207,5 +212,6 @@ function renderNodeProperties(box, n) {
   if (editable) $('addPortHere').onclick = () => setMode('addPort');
   box.querySelectorAll('[data-remove-port]').forEach(button => button.onclick = () => removePort(n.id, button.dataset.removePort));
   $('duplicateSelected').onclick = e => duplicateNode(n, e.altKey);
+  $('saveTemplate').onclick = saveSelectionAsTemplate;
   $('deleteSelected').onclick = deleteSelected;
 }

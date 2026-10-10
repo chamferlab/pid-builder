@@ -98,6 +98,8 @@ aside { background: var(--panel); overflow: auto; padding: 12px; }
 .glyph img, .glyph svg { display: block; width: 40px; height: 36px; object-fit: contain; }
 .seals .glyph, .seals .glyph img { width: 96px; height: 58px; }
 .seals .glyph svg { width: 44px; height: 40px; }
+.item.template .glyph, .item.template .glyph svg { width: 96px; height: 58px; }
+.palette-hint { grid-column: 1 / -1; margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); }
 #instrumentPalette { grid-template-columns: repeat(4, 1fr); }
 #instrumentPalette .item b { display: none; }
 .bubble {
@@ -235,6 +237,19 @@ button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--dan
   .brand { display: none; }
   #status { display: none; }
 }
+
+/* ---- Templates ---- */
+.template-row { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; margin-bottom: 4px; }
+.template-row .button { padding: 5px 8px; }
+.template-bar {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2;
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px;
+  border: 1px solid #e3c36a; border-radius: 8px; background: #fff7dc; color: #5a4300;
+  font-size: 12px; box-shadow: 0 2px 8px rgba(20, 40, 60, .12); white-space: nowrap;
+}
+.template-bar[hidden] { display: none; }
+/* The drawing set aside while a template is edited must not be replaced from the toolbar. */
+.editing-template #fileGroup { opacity: .4; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -247,7 +262,7 @@ button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--dan
         <button id="undo" title="Undo (Ctrl/Cmd+Z)" disabled>↶ Undo</button>
         <button id="redo" title="Redo (Ctrl/Cmd+Shift+Z or Ctrl+Y)" disabled>↷ Redo</button>
       </div>
-      <div class="group">
+      <div class="group" id="fileGroup">
         <button id="newProject" title="Start with an empty canvas">New</button>
         <label title="Open a saved project (JSON)">Open<input id="projectFile" type="file" accept=".json,application/json"></label>
         <button id="saveProject" title="Download an editable project file (JSON)">Save</button>
@@ -264,6 +279,7 @@ button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--dan
 
   <aside class="palette">
     <input id="paletteSearch" class="text" type="search" placeholder="Search symbols" aria-label="Search symbols">
+    <div class="section">Templates</div><div class="tiles seals" id="templatePalette"></div>
     <div class="section">Mechanical seals</div><div class="tiles seals" id="sealPalette"></div>
     <div class="section">Instruments</div><div class="tiles" id="instrumentPalette"></div>
     <div class="section">Equipment and piping</div><div class="tiles" id="equipmentPalette"></div>
@@ -287,6 +303,12 @@ button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--dan
     </div>
     <div class="canvas-wrap" id="canvasWrap">
       <svg id="drawing" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 900" aria-label="P and ID drawing canvas"></svg>
+      <div class="template-bar" id="templateBar" hidden>
+        <span>Editing template <b id="templateBarName"></b></span>
+        <button class="button" id="templateSave">Save template</button>
+        <button class="button" id="templateClose">Close without saving</button>
+      </div>
+      <input id="templateFile" type="file" accept=".json,application/json" hidden>
       <div class="empty-hint" id="emptyHint"><b>Start by dragging a symbol onto the sheet</b>Then choose <kbd>Pipe</kbd> and click two symbols to connect them.</div>
     </div>
   </main>
@@ -865,13 +887,15 @@ function renderCanvas() {
   renderNodes();
   renderSheet();
   renderOverlay();
-  $('sheetTitle').textContent = state.title;
+  $('sheetTitle').textContent = $('templateBarName').textContent = state.title;
 }
 function render() {
   renderCanvas();
   $('count').textContent = `${state.nodes.length} symbols · ${state.pipes.length} pipes`;
   $('zoomReset').textContent = `${Math.round(HOME_VIEW.w / view.w * 100)}%`;
   $('emptyHint').hidden = state.nodes.length > 0;
+  $('templateBar').hidden = !state.templateId;
+  document.body.classList.toggle('editing-template', !!state.templateId);
   setStatus(statusText());
   for (const [id, toolMode] of [['toolSelect', 'select'], ['toolPipe', 'pipe'], ['addSealPort', 'addPort']]) {
     $(id).classList.toggle('active', mode === toolMode);
@@ -1066,6 +1090,7 @@ function renderDrawingProperties(box) {
       <div>${field('Drawn by', 'sheetAuthor', sheetInfo().author || '', 'data-sheet-field="author"')}</div>
     </div>
     <label class="check"><input type="checkbox" id="sheetFrameToggle" ${sheetInfo().frame ? 'checked' : ''}> Frame and title block</label>
+    ${templatePanelMarkup()}
     <div class="panel-title">How to draw</div>
     <ol class="steps">
       <li>Drag symbols from the palette onto the sheet.</li>
@@ -1087,6 +1112,7 @@ function renderDrawingProperties(box) {
   box.querySelectorAll('[data-sheet-field]').forEach(input => input.oninput = () => {
     sheet()[input.dataset.sheetField] = input.value; renderCanvasOnly(); persist('sheet:' + input.id);
   });
+  wireTemplatePanel(box);
   $('sheetFrameToggle').onchange = e => { sheet().frame = e.target.checked; renderCanvasOnly(); persist(); };
 }
 
@@ -1104,9 +1130,11 @@ function renderGroupProperties(box) {
     <div class="button-grid">
       <button class="button" id="duplicateGroup">Duplicate</button>
       <button class="button danger" id="deleteSelected">Delete</button>
-    </div>`;
+    </div>
+    <button class="button block" id="saveTemplate" title="Keep these symbols and the pipes between them for reuse">Save as template</button>`;
   box.querySelectorAll('[data-align]').forEach(button => button.onclick = () => { const [axis, edge] = button.dataset.align.split(':'); alignSelected(axis, edge); });
   $('duplicateGroup').onclick = e => duplicateSelectedNodes(e.altKey);
+  $('saveTemplate').onclick = saveSelectionAsTemplate;
   $('deleteSelected').onclick = deleteSelected;
 }
 
@@ -1226,7 +1254,8 @@ function renderNodeProperties(box, n) {
     <div class="button-grid">
       <button class="button" id="duplicateSelected">Duplicate</button>
       <button class="button danger" id="deleteSelected">Delete</button>
-    </div>`;
+    </div>
+    <button class="button block" id="saveTemplate" title="Keep this symbol with its ports for reuse">Save as template</button>`;
 
   if (isInstrument(n.kind)) $('numberEdit').oninput = e => {
     n.number = e.target.value.trim(); $('tagPreview').textContent = instrumentTag(n);
@@ -1247,6 +1276,7 @@ function renderNodeProperties(box, n) {
   if (editable) $('addPortHere').onclick = () => setMode('addPort');
   box.querySelectorAll('[data-remove-port]').forEach(button => button.onclick = () => removePort(n.id, button.dataset.removePort));
   $('duplicateSelected').onclick = e => duplicateNode(n, e.altKey);
+  $('saveTemplate').onclick = saveSelectionAsTemplate;
   $('deleteSelected').onclick = deleteSelected;
 }
 
@@ -1291,18 +1321,15 @@ function duplicateNode(n, bypassSnap = false) {
   selected = {type: 'node', id: copy.id};
   render(); persist();
 }
-// Copies the selected symbols together with the pipes that run between them.
-function duplicateSelectedNodes(bypassSnap = false) {
-  const nodes = selectedNodes();
-  if (nodes.length < 2) return;
-  const dx = snapCoordinate(nodes[0].x + 45, bypassSnap) - nodes[0].x, dy = snapCoordinate(nodes[0].y + 45, bypassSnap) - nodes[0].y;
+// Adds copies of symbols and the pipes between them, moved by an offset, and selects the copies.
+function addCopies(nodes, sourcePipes, dx, dy) {
   const ids = new Map(), lineIds = new Map(), copies = [];
   for (const n of nodes) {
     const copy = structuredClone(n);
     copy.id = nextId(); copy.x += dx; copy.y += dy;
     ids.set(n.id, copy.id); copies.push(copy);
   }
-  const pipes = state.pipes.filter(p => ids.has(p.a.node) && ids.has(p.b.node)).map(p => {
+  const pipes = sourcePipes.filter(p => ids.has(p.a.node) && ids.has(p.b.node)).map(p => {
     const copy = structuredClone(p);
     copy.id = nextId(); copy.a.node = ids.get(p.a.node); copy.b.node = ids.get(p.b.node); copy.route = shiftedRoute(p.route, dx, dy);
     if (!lineIds.has(lineKey(p))) lineIds.set(lineKey(p), copy.id);
@@ -1312,7 +1339,13 @@ function duplicateSelectedNodes(bypassSnap = false) {
   // Pushed one at a time so each numbered copy takes the next free tag number.
   for (const copy of copies) { if (copy.number) copy.number = nextTagNumber(copy.kind); state.nodes.push(copy); }
   state.pipes.push(...pipes);
-  selected = {type: 'nodes', ids: copies.map(n => n.id)};
+  selected = copies.length > 1 ? {type: 'nodes', ids: copies.map(n => n.id)} : copies.length ? {type: 'node', id: copies[0].id} : null;
+}
+// Copies the selected symbols together with the pipes that run between them.
+function duplicateSelectedNodes(bypassSnap = false) {
+  const nodes = selectedNodes();
+  if (nodes.length < 2) return;
+  addCopies(nodes, state.pipes, snapCoordinate(nodes[0].x + 45, bypassSnap) - nodes[0].x, snapCoordinate(nodes[0].y + 45, bypassSnap) - nodes[0].y);
   render(); persist();
 }
 function duplicateSelection(bypassSnap = false) {
@@ -1868,6 +1901,197 @@ $('exportPNG').onclick = () => {
   img.src = url;
 };
 
+// Templates: named pieces of drawing kept in the browser for reuse, with a file for backup and sharing.
+// A template holds symbols and the pipes between them, positioned around its own centre.
+
+const TEMPLATE_STORAGE = 'seal-loop-pid-templates-v1';
+const TEMPLATE_STASH = 'seal-loop-pid-template-stash-v1';
+const TEMPLATE_FILE_TYPE = 'seal-loop-pid-templates';
+
+let templates = [];
+try {
+  const saved = JSON.parse(localStorage.getItem(TEMPLATE_STORAGE));
+  if (Array.isArray(saved)) templates = saved.filter(validTemplate);
+} catch {}
+
+function validTemplate(t) {
+  return !!t && typeof t.name === 'string' && Array.isArray(t.nodes) && t.nodes.length > 0 && Array.isArray(t.pipes);
+}
+function storeTemplates() {
+  try { localStorage.setItem(TEMPLATE_STORAGE, JSON.stringify(templates)); }
+  catch { alert('The browser storage is full, so templates could not be saved. Export them to a file and remove some.'); }
+  renderTemplates(); render();
+}
+const templateById = id => templates.find(t => t.id === id);
+const templateByName = name => templates.find(t => t.name.toLowerCase() === name.trim().toLowerCase());
+const newTemplateId = () => 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+// Copies the given symbols and the pipes running between them, centred on the origin.
+function fragmentOf(nodes) {
+  const ids = new Set(nodes.map(n => n.id)), boxes = nodes.map(nodeBox);
+  const cx = Math.round((Math.min(...boxes.map(b => b.l)) + Math.max(...boxes.map(b => b.r))) / 2);
+  const cy = Math.round((Math.min(...boxes.map(b => b.t)) + Math.max(...boxes.map(b => b.b))) / 2);
+  return {
+    nodes: nodes.map(n => ({...structuredClone(n), x: n.x - cx, y: n.y - cy})),
+    pipes: state.pipes.filter(p => ids.has(p.a.node) && ids.has(p.b.node)).map(p => ({...structuredClone(p), route: shiftedRoute(p.route, -cx, -cy)}))
+  };
+}
+
+// Saves a fragment under a name, replacing the template that already has that name.
+function saveTemplate(name, fragment, id = null) {
+  name = name.trim();
+  const existing = templateById(id) || templateByName(name);
+  if (existing) Object.assign(existing, fragment, {name});
+  else templates.push({id: newTemplateId(), name, ...fragment});
+  storeTemplates();
+}
+function saveSelectionAsTemplate() {
+  const nodes = selectedNodes();
+  if (!nodes.length) return;
+  const name = prompt('Template name', nodes.length === 1 ? nodes[0].tag || '' : '')?.trim();
+  if (!name) return;
+  if (templateByName(name) && !confirm(`Replace the existing template “${templateByName(name).name}”?`)) return;
+  saveTemplate(name, fragmentOf(nodes));
+  setStatus(`Saved template ${name}`);
+}
+
+function placeTemplate(id, x, y, bypassSnap = false) {
+  const t = templateById(id);
+  if (!t) return;
+  addCopies(t.nodes, t.pipes, snapCoordinate(x, bypassSnap), snapCoordinate(y, bypassSnap));
+  restoreSymbolAssets();  // a template may predate redrawn artwork
+  mode = 'select'; pending = null;
+  render(); persist();
+}
+
+// A small drawing of the template, built by rendering it as if it were the whole drawing.
+function templateThumbnail(t) {
+  const keep = state;
+  state = {...blankState(), nodes: t.nodes, pipes: t.pipes};
+  try {
+    const box = contentBox(), pad = 12;
+    const pipes = t.pipes.map(p => { const r = pipeRoute(p); return r ? `<path d="${r.g.path}" fill="none" stroke="${pipeColor(p)}" stroke-width="2.6" vector-effect="non-scaling-stroke"/>` : ''; }).join('');
+    const nodes = t.nodes.map(n => `<g transform="translate(${n.x} ${n.y})"><g transform="${nodeTransform(n)}">${symbolMarkup(n)}</g>${isInstrument(n.kind) ? captionMarkup({...n, tag: n.kind}) : ''}</g>`).join('');
+    return `<svg xmlns="${NS}" viewBox="${box.l - pad} ${box.t - pad} ${box.r - box.l + 2 * pad} ${box.b - box.t + 2 * pad}" aria-hidden="true">${pipes}${nodes}</svg>`;
+  } catch { return ''; }
+  finally { state = keep; }
+}
+
+function renderTemplates() {
+  const target = $('templatePalette');
+  target.replaceChildren();
+  if (!templates.length) {
+    target.innerHTML = '<p class="palette-hint">Select symbols on the sheet and choose <b>Save as template</b> to reuse them.</p>';
+    return;
+  }
+  for (const t of templates) {
+    const tile = document.createElement('button');
+    tile.className = 'item template';
+    tile.draggable = true;
+    tile.dataset.template = t.id;
+    tile.title = `${t.name} · template`;
+    tile.innerHTML = `<span class="glyph">${templateThumbnail(t)}</span><b>${escapeHtml(t.name)}</b>`;
+    tile.ondragstart = e => { e.dataTransfer.setData('text/plain', 'template:' + t.id); e.dataTransfer.effectAllowed = 'copy'; };
+    tile.onclick = e => placeTemplate(t.id, view.x + view.w / 2, view.y + view.h / 2, e.altKey);
+    target.appendChild(tile);
+  }
+}
+
+// ---- Editing a template ----
+// The template is opened as a drawing of its own; the drawing that was open is set aside in
+// browser storage and comes back when the template is saved or closed.
+
+const editingTemplate = () => state.templateId || null;
+
+function editTemplate(id) {
+  const t = templateById(id);
+  if (!t || editingTemplate()) return;
+  try { localStorage.setItem(TEMPLATE_STASH, JSON.stringify(state)); }
+  catch { alert('The browser storage is full, so the current drawing cannot be set aside. Save it to a file first.'); return; }
+  state = {...blankState(), title: t.name, templateId: t.id};
+  state.sheet.frame = false;
+  resetInteraction();
+  view = {...HOME_VIEW};
+  addCopies(t.nodes, t.pipes, HOME_VIEW.w / 2, HOME_VIEW.h / 2);
+  restoreSymbolAssets();
+  selected = null;
+  zoomToFit(); persist(); resetHistory();
+}
+function closeTemplate(save) {
+  const id = editingTemplate();
+  if (!id) return;
+  if (save) {
+    if (!state.nodes.length) { alert('A template needs at least one symbol.'); return; }
+    const name = state.title.trim() || templateById(id)?.name || 'Template';
+    const clash = templateByName(name);
+    if (clash && clash.id !== id) { alert(`Another template is already called “${clash.name}”. Change the title first.`); return; }
+    saveTemplate(name, fragmentOf(state.nodes), id);
+  }
+  let previous = null;
+  try { previous = JSON.parse(localStorage.getItem(TEMPLATE_STASH)); localStorage.removeItem(TEMPLATE_STASH); } catch {}
+  if (previous && Array.isArray(previous.nodes) && Array.isArray(previous.pipes)) loadProject(previous);
+  else seed();
+}
+$('templateSave').onclick = () => closeTemplate(true);
+$('templateClose').onclick = () => closeTemplate(false);
+
+// ---- Template file ----
+
+function exportTemplates() {
+  download('seal-loop-templates.json', new Blob([JSON.stringify({type: TEMPLATE_FILE_TYPE, version: 1, templates}, null, 2)], {type: 'application/json'}));
+}
+// Imported templates are added to the library; one with the name of an existing template replaces it.
+$('templateFile').onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text()), incoming = data?.type === TEMPLATE_FILE_TYPE && Array.isArray(data.templates) ? data.templates.filter(validTemplate) : null;
+    if (!incoming?.length) throw Error('This file contains no templates.');
+    for (const t of incoming) {
+      const existing = templateByName(t.name);
+      if (existing) Object.assign(existing, {nodes: t.nodes, pipes: t.pipes});
+      else templates.push({id: newTemplateId(), name: t.name.trim(), nodes: t.nodes, pipes: t.pipes});
+    }
+    storeTemplates();
+    setStatus(`Imported ${incoming.length} template${incoming.length === 1 ? '' : 's'}`);
+  } catch (err) { alert('Could not import templates: ' + err.message); }
+  e.target.value = '';
+};
+
+// The template list in the Properties panel, shown with the drawing's own properties.
+function templatePanelMarkup() {
+  const rows = templates.map(t => `
+    <div class="template-row" data-template-row="${t.id}">
+      <input class="text" value="${escapeHtml(t.name)}" data-template-name="${t.id}" aria-label="Template name">
+      <button class="button" data-template-edit="${t.id}" title="Open this template on the sheet to change it" ${editingTemplate() ? 'disabled' : ''}>Edit</button>
+      <button class="button danger" data-template-delete="${t.id}" title="Delete this template">×</button>
+    </div>`).join('');
+  return `
+    <div class="panel-title">Templates</div>
+    ${rows || '<p class="note">None yet. Select symbols and choose Save as template.</p>'}
+    <div class="button-grid">
+      <button class="button" id="templatesExport" ${templates.length ? '' : 'disabled'} title="Download all templates as one file">Export</button>
+      <button class="button" id="templatesImport" title="Add templates from a file">Import</button>
+    </div>
+    <p class="note">Templates are kept in this browser. Export them to back them up or share them.</p>`;
+}
+function wireTemplatePanel(box) {
+  box.querySelectorAll('[data-template-name]').forEach(input => input.onchange = () => {
+    const t = templateById(input.dataset.templateName), name = input.value.trim(), clash = templateByName(name);
+    if (!t) return;
+    if (!name || (clash && clash !== t)) { input.value = t.name; return; }
+    t.name = name; storeTemplates();
+  });
+  box.querySelectorAll('[data-template-edit]').forEach(button => button.onclick = () => editTemplate(button.dataset.templateEdit));
+  box.querySelectorAll('[data-template-delete]').forEach(button => button.onclick = () => {
+    const t = templateById(button.dataset.templateDelete);
+    if (!t || !confirm(`Delete the template “${t.name}”? Drawings that already use it are not affected.`)) return;
+    templates = templates.filter(other => other !== t); storeTemplates();
+  });
+  $('templatesExport').onclick = exportTemplates;
+  $('templatesImport').onclick = () => $('templateFile').click();
+}
+
 // Palette, toolbar wiring, and startup.
 
 function buildPalette(group, target) {
@@ -1888,6 +2112,7 @@ function buildPalette(group, target) {
 buildPalette('seal', 'sealPalette');
 buildPalette('instrument', 'instrumentPalette');
 buildPalette('equipment', 'equipmentPalette');
+renderTemplates();
 
 $('paletteSearch').oninput = e => {
   const query = e.target.value.trim().toLowerCase();
@@ -1905,7 +2130,8 @@ canvasWrap.ondragleave = e => { if (!canvasWrap.contains(e.relatedTarget)) showI
 canvasWrap.ondrop = e => {
   e.preventDefault();
   const kind = e.dataTransfer.getData('text/plain');
-  if (specs[kind]) {
+  if (kind.startsWith('template:')) { const p = point(e); placeTemplate(kind.slice(9), p.x, p.y, e.altKey); }
+  else if (specs[kind]) {
     const p = point(e), target = insertionTarget(kind, p);
     showInsertionPreview(null);
     const n = createNode(kind, p.x, p.y, false, e.altKey);

@@ -39,18 +39,15 @@ function duplicateNode(n, bypassSnap = false) {
   selected = {type: 'node', id: copy.id};
   render(); persist();
 }
-// Copies the selected symbols together with the pipes that run between them.
-function duplicateSelectedNodes(bypassSnap = false) {
-  const nodes = selectedNodes();
-  if (nodes.length < 2) return;
-  const dx = snapCoordinate(nodes[0].x + 45, bypassSnap) - nodes[0].x, dy = snapCoordinate(nodes[0].y + 45, bypassSnap) - nodes[0].y;
+// Adds copies of symbols and the pipes between them, moved by an offset, and selects the copies.
+function addCopies(nodes, sourcePipes, dx, dy) {
   const ids = new Map(), lineIds = new Map(), copies = [];
   for (const n of nodes) {
     const copy = structuredClone(n);
     copy.id = nextId(); copy.x += dx; copy.y += dy;
     ids.set(n.id, copy.id); copies.push(copy);
   }
-  const pipes = state.pipes.filter(p => ids.has(p.a.node) && ids.has(p.b.node)).map(p => {
+  const pipes = sourcePipes.filter(p => ids.has(p.a.node) && ids.has(p.b.node)).map(p => {
     const copy = structuredClone(p);
     copy.id = nextId(); copy.a.node = ids.get(p.a.node); copy.b.node = ids.get(p.b.node); copy.route = shiftedRoute(p.route, dx, dy);
     if (!lineIds.has(lineKey(p))) lineIds.set(lineKey(p), copy.id);
@@ -60,7 +57,13 @@ function duplicateSelectedNodes(bypassSnap = false) {
   // Pushed one at a time so each numbered copy takes the next free tag number.
   for (const copy of copies) { if (copy.number) copy.number = nextTagNumber(copy.kind); state.nodes.push(copy); }
   state.pipes.push(...pipes);
-  selected = {type: 'nodes', ids: copies.map(n => n.id)};
+  selected = copies.length > 1 ? {type: 'nodes', ids: copies.map(n => n.id)} : copies.length ? {type: 'node', id: copies[0].id} : null;
+}
+// Copies the selected symbols together with the pipes that run between them.
+function duplicateSelectedNodes(bypassSnap = false) {
+  const nodes = selectedNodes();
+  if (nodes.length < 2) return;
+  addCopies(nodes, state.pipes, snapCoordinate(nodes[0].x + 45, bypassSnap) - nodes[0].x, snapCoordinate(nodes[0].y + 45, bypassSnap) - nodes[0].y);
   render(); persist();
 }
 function duplicateSelection(bypassSnap = false) {

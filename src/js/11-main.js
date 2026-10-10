@@ -18,6 +18,7 @@ function buildPalette(group, target) {
 buildPalette('seal', 'sealPalette');
 buildPalette('instrument', 'instrumentPalette');
 buildPalette('equipment', 'equipmentPalette');
+renderTemplates();
 
 $('paletteSearch').oninput = e => {
   const query = e.target.value.trim().toLowerCase();
@@ -35,7 +36,8 @@ canvasWrap.ondragleave = e => { if (!canvasWrap.contains(e.relatedTarget)) showI
 canvasWrap.ondrop = e => {
   e.preventDefault();
   const kind = e.dataTransfer.getData('text/plain');
-  if (specs[kind]) {
+  if (kind.startsWith('template:')) { const p = point(e); placeTemplate(kind.slice(9), p.x, p.y, e.altKey); }
+  else if (specs[kind]) {
     const p = point(e), target = insertionTarget(kind, p);
     showInsertionPreview(null);
     const n = createNode(kind, p.x, p.y, false, e.altKey);
