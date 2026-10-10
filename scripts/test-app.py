@@ -144,15 +144,16 @@ def run_tests(browser):
     assert [port['id'] for port in state()['nodes'][0]['ports']] == ['P1']
     load(empty_project)
     print('PASS: migrate old symbol ports and preserve current manual ports', flush=True)
-    for kind in ['air-driven-pump', 'isolation-valve', 'check-valve', 'drain', 'vent']:
+    # Equipment and fittings start with ports on the nozzles their artwork shows.
+    for kind, ports in [('air-driven-pump', [(-85, 12), (85, 12), (0, -75)]), ('isolation-valve', [(-48, 0), (48, 0)]), ('check-valve', [(-48, 0), (48, 0)]), ('drain', [(0, -45)]), ('vent', [(0, 45)])]:
         load(empty_project)
         roundtrip(lambda kind=kind: add(kind), f'add {kind}')
-        assert state()['nodes'][0]['kind'] == kind and state()['nodes'][0]['ports'] == []
+        assert state()['nodes'][0]['kind'] == kind and [(q['x'], q['y']) for q in state()['nodes'][0]['ports']] == ports
         assert b.js("return document.querySelector('#nodes .symbol-artwork').children.length > 0")
     load(empty_project)
     assert b.js("return document.querySelector('[data-kind=control-valve]').textContent.includes('Pressure control valve')")
     roundtrip(lambda: add('control-valve'), 'add redesigned pressure control valve')
-    assert state()['nodes'][0]['ports'] == []
+    assert [(q['x'], q['y']) for q in state()['nodes'][0]['ports']] == [(-60, 25), (60, 25), (0, -55)]
     assert b.js("return atob(document.querySelector('#nodes .symbol-artwork image').getAttribute('href').split(',')[1]).includes('Dome-loaded pressure control valve')")
     valve_fixture = dict(title='Valve insertion', nodes=[
         dict(id='n0', kind='junction', x=200, y=400, w=44, h=44, tag='', notes='', ports=junction_ports),
@@ -226,7 +227,7 @@ def run_tests(browser):
     assert state()['nodes'][1]['x'] == 223
     select_pair()
     def move_group():
-        b.js('''const n=document.querySelector('#nodes>.node'),svg=document.getElementById('drawing'),from=new DOMPoint(0,0).matrixTransform(n.getScreenCTM()),to=new DOMPoint(300,300).matrixTransform(svg.getScreenCTM());n.querySelector('.symbol-artwork').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:from.x,clientY:from.y}));for(let i=1;i<=4;i++)window.dispatchEvent(new PointerEvent('pointermove',{clientX:from.x+(to.x-from.x)*i/4,clientY:from.y+(to.y-from.y)*i/4}));window.dispatchEvent(new PointerEvent('pointerup'));return true;''')
+        b.js('''const n=document.querySelector('#nodes>.node'),svg=document.getElementById('drawing'),from=new DOMPoint(0,0).matrixTransform(n.getScreenCTM()),to=new DOMPoint(300,300).matrixTransform(svg.getScreenCTM());n.querySelector('.symbol-artwork').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:from.x,clientY:from.y}));for(let i=1;i<=4;i++)window.dispatchEvent(new PointerEvent('pointermove',{altKey:true,clientX:from.x+(to.x-from.x)*i/4,clientY:from.y+(to.y-from.y)*i/4}));window.dispatchEvent(new PointerEvent('pointerup'));return true;''')
     roundtrip(move_group, 'move selected symbols as one edit')
     assert [(n['x'], n['y']) for n in state()['nodes']] == [(300, 300), (323, 480), (800, 550)]
     assert state()['pipes'][0]['route']['value'] == 400
@@ -320,13 +321,13 @@ def run_tests(browser):
     load(empty_project)
     print('PASS: optional 25-unit symbol snapping, Alt bypass, and saved preference', flush=True)
     add('circulating-pump')
-    assert state()['nodes'][0]['ports'] == []
+    assert [port['id'] for port in state()['nodes'][0]['ports']] == ['P1', 'P2']
     def add_equipment_port():
         select(0)
         click('addPortHere')
         b.js('''const n=document.querySelector('#nodes>.node'),p=new DOMPoint(0,-20).matrixTransform(n.getScreenCTM());n.querySelector('.symbol-artwork').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:p.x,clientY:p.y}));return true;''')
     roundtrip(add_equipment_port, 'add manual equipment port')
-    assert [port['id'] for port in state()['nodes'][0]['ports']] == ['P1']
+    assert [port['id'] for port in state()['nodes'][0]['ports']] == ['P1', 'P2', 'P3']
     click('undo')
     click('undo')
     roundtrip(lambda: add('PI'), 'add symbol / redo')
@@ -754,7 +755,7 @@ def run_editing_tests(browser):
     drag(650, 400, 650, 600, altKey=True)
     after = state()
     healed(after['pipes'])
-    assert after['nodes'][2]['ports'] == [] and after['nodes'][2]['y'] == 600 and len(after['nodes']) == 3
+    assert [q['id'] for q in after['nodes'][2]['ports']] == ['L', 'R'] and after['nodes'][2]['y'] == 600 and len(after['nodes']) == 3
     click('undo')
     assert state() == inline, 'pulling a symbol out of a line is one undo step'
     drag(650, 400, 700, 400)
@@ -839,6 +840,47 @@ def run_editing_tests(browser):
     b.js("localStorage.removeItem(arguments[0]);return true", [TEMPLATES])
     b.call('WebDriver:Navigate', {'url': url})
     print('PASS: templates are saved, placed, edited, renamed, exported, and imported', flush=True)
+
+    # Dragging lines a symbol up with another: port with port first, then centres and edges.
+    guides = dict(title='Guides', nodes=[
+        dict(id='n0', kind='cooler', x=400, y=400, w=130, h=200, tag='A', notes='', ports=[dict(id='P1', x=65, y=-40)], artworkSource='media'),
+        dict(id='n1', kind='PI', x=900, y=700, w=90, h=90, tag='B', notes='', ports=[dict(id='L', x=-45, y=0)]),
+    ], pipes=[], nextId=2, sealSvg=None, portModeVersion=3)
+    load(guides)
+
+    def drag_held(x1, y1, x2, y2, **modifiers):
+        b.js(POINTER + "fire('pointerdown',arguments[0],arguments[1],null);fire('pointermove',arguments[2],arguments[3],window,arguments[4]);return true", [x1, y1, x2, y2, modifiers])
+
+    def release():
+        b.js(POINTER + "fire('pointerup',0,0,window);return true")
+
+    def guide_lines():
+        return b.js("return [...document.querySelectorAll('.align-guide')].map(g=>[g.getAttribute('class').split(' ')[1],+g.getAttribute('x1'),+g.getAttribute('y1'),+g.getAttribute('x2'),+g.getAttribute('y2')])")
+
+    drag_held(900, 700, 800, 363)   # the PI's port is 3 below the cooler's port line at y=360
+    assert guide_lines() == [['port', 320, 360, 860, 360]]
+    release()
+    assert (state()['nodes'][1]['x'], state()['nodes'][1]['y']) == (800, 360) and guide_lines() == []
+    click('undo')
+    drag_held(900, 700, 404, 700)   # nearly under the cooler: centres line up
+    assert guide_lines() == [['center', 400, 285, 400, 760]]
+    release()
+    assert state()['nodes'][1]['x'] == 400
+    drag_held(400, 700, 404, 720, altKey=True)
+    assert guide_lines() == []
+    release()
+    assert state()['nodes'][1]['x'] == 404, 'Alt switches the guides off'
+    drag_held(404, 720, 600, 560)   # far from every line
+    assert guide_lines() == []
+    release()
+    assert (state()['nodes'][1]['x'], state()['nodes'][1]['y']) == (600, 560)
+    click('snapGrid')
+    drag_held(600, 560, 800, 363)
+    assert guide_lines() == []
+    release()
+    assert (state()['nodes'][1]['x'], state()['nodes'][1]['y']) == (800, 375), 'the grid takes over from the guides'
+    click('snapGrid')
+    print('PASS: alignment guides for ports, centres, and edges', flush=True)
 
     # Instruments are numbered per type as they are placed; the number shows in the bubble.
     def type_into(element_id, value):

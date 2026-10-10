@@ -242,3 +242,7 @@ button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--dan
 .template-bar[hidden] { display: none; }
 /* The drawing set aside while a template is edited must not be replaced from the toolbar. */
 .editing-template #fileGroup { opacity: .4; pointer-events: none; }
+
+/* ---- Alignment guides ---- */
+.align-guide { stroke: #e0489a; stroke-width: 1; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+.align-guide.port { stroke-dasharray: none; }

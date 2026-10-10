@@ -45,6 +45,20 @@ EQUIPMENT = {
     'control-valve': ('Pressure control valve', 'Dome-loaded', 'PRESSURE CONTROL VALVE'),
 }
 
+# Ports a new piece of equipment starts with: the open end of each nozzle drawn in its SVG,
+# in that SVG's viewBox coordinates. Update an entry when a nozzle moves.
+PORTS = {
+    'reservoir': [(85, 0), (0, 107.5), (170, 107.5), (85, 215)],
+    'nitrogen': [(85, 0), (0, 107.5), (170, 107.5), (85, 215)],
+    'accumulator': [(40, 200)],
+    'cooler': [(65, 0), (65, 200), (0, 140), (130, 60)],
+    'cooler-dual': [(65, 0), (135, 0), (65, 200), (135, 200), (0, 140), (200, 60)],
+    'heater': [(65, 0), (65, 200)],
+    'circulating-pump': [(0, 55), (110, 55)],
+    'air-driven-pump': [(0, 87), (170, 87), (85, 0)],
+    'control-valve': [(0, 80), (120, 80), (60, 0)],
+}
+
 
 def symbol_catalog():
     """Crop each media SVG to its artwork and return it as an embeddable catalog entry."""
@@ -86,6 +100,8 @@ def symbol_catalog():
             'version': hashlib.sha256(source.read_bytes()).hexdigest()[:12],
             'svg': 'data:image/svg+xml;base64,' + base64.b64encode(ET.tostring(root, encoding='utf-8')).decode(),
         }
+        if key in PORTS:
+            catalog[key]['ports'] = [{'id': f'P{i}', 'x': x - width / 2, 'y': y - height / 2} for i, (x, y) in enumerate(PORTS[key], 1)]
     return catalog
 
 

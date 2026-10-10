@@ -2,6 +2,10 @@
 
 const DRAG_THRESHOLD = 5; // pixels a pointer must travel before a press on a port counts as a drag
 
+// Alignment guides work in screen pixels, and give way to the grid and to Alt.
+const GUIDE_REACH = 6;
+const guidesActive = e => !snapEnabled && !e.altKey;
+
 function beginGroupDrag(n, p) {
   const ids = new Set(selectedNodeIds());
   return {
@@ -98,11 +102,23 @@ window.addEventListener('pointermove', e => {
     insertionPreview = insertionTarget(n.kind, raw, n.id);
     n.x = insertionPreview ? insertionPreview.x : snapCoordinate(raw.x, e.altKey);
     n.y = insertionPreview ? insertionPreview.y : snapCoordinate(raw.y, e.altKey);
+    drag.guides = null;
+    if (!insertionPreview && guidesActive(e)) {
+      const snap = alignmentSnap([n], GUIDE_REACH / screenScale());
+      n.x += snap.dx; n.y += snap.dy; drag.guides = snap.guides;
+    }
   } else if (drag.type === 'nodes') {
     const anchor = drag.start.find(item => item.id === drag.anchor), p = point(e);
     if (!anchor) return;
-    const dx = snapCoordinate(p.x - drag.dx, e.altKey) - anchor.x, dy = snapCoordinate(p.y - drag.dy, e.altKey) - anchor.y;
-    for (const start of drag.start) { const n = byId(start.id); if (n) { n.x = start.x + dx; n.y = start.y + dy; } }
+    let dx = snapCoordinate(p.x - drag.dx, e.altKey) - anchor.x, dy = snapCoordinate(p.y - drag.dy, e.altKey) - anchor.y;
+    const place = () => { for (const start of drag.start) { const n = byId(start.id); if (n) { n.x = start.x + dx; n.y = start.y + dy; } } };
+    place();
+    drag.guides = null;
+    if (guidesActive(e)) {
+      const snap = alignmentSnap(drag.start.map(start => byId(start.id)).filter(Boolean), GUIDE_REACH / screenScale());
+      dx += snap.dx; dy += snap.dy; drag.guides = snap.guides;
+      place();
+    }
     for (const start of drag.routes) { const pipe = pipeById(start.id); if (pipe) pipe.route = shiftedRoute(start.route, dx, dy); }
   } else if (drag.type === 'route') {
     const pipe = pipeById(drag.id);

@@ -59,3 +59,35 @@ function contentBox() {
   for (const p of state.pipes) for (const q of pipeRoute(p)?.points || []) grow(q.x, q.y);
   return box;
 }
+
+// ---- Alignment while dragging ----
+// The positions on one axis that a symbol can line up by: its centre, its two edges, and its ports.
+function alignFeatures(n, axis) {
+  const box = nodeBox(n), low = axis === 'x' ? box.l : box.t, high = axis === 'x' ? box.r : box.b;
+  return [
+    ...n.ports.map(p => ({at: n[axis] + transformPoint(n, p)[axis], type: 'port'})),
+    {at: (low + high) / 2, type: 'center'}, {at: low, type: 'edge'}, {at: high, type: 'edge'}
+  ];
+}
+// Finds the small shift that lines the moving symbols up with another symbol, like with like:
+// port with port, centre with centre, edge with edge. Returns the shift and the guide lines to show.
+function alignmentSnap(moving, tolerance) {
+  const ids = new Set(moving.map(n => n.id)), others = state.nodes.filter(n => !ids.has(n.id));
+  const rank = {port: 0, center: 1, edge: 2}, result = {dx: 0, dy: 0, guides: []};
+  for (const axis of ['x', 'y']) {
+    let best = null;
+    for (const m of moving) for (const f of alignFeatures(m, axis)) for (const o of others) for (const t of alignFeatures(o, axis)) {
+      if (f.type !== t.type) continue;
+      const shift = t.at - f.at, size = Math.abs(shift);
+      if (size > tolerance) continue;
+      if (!best || size < best.size - .01 || (size < best.size + .01 && rank[f.type] < rank[best.type])) best = {shift, size, type: f.type, at: t.at, m, o};
+    }
+    if (!best) continue;
+    result[axis === 'x' ? 'dx' : 'dy'] = best.shift;
+    const a = nodeBox(best.m), b = nodeBox(best.o);
+    result.guides.push(axis === 'x'
+      ? {x1: best.at, x2: best.at, y1: Math.min(a.t, b.t) - 15, y2: Math.max(a.b, b.b) + 15, type: best.type}
+      : {y1: best.at, y2: best.at, x1: Math.min(a.l, b.l) - 15, x2: Math.max(a.r, b.r) + 15, type: best.type});
+  }
+  return result;
+}

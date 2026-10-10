@@ -10,7 +10,7 @@ function createNode(kind, x, y, commit = true, bypassSnap = false) {
   const spec = specs[kind];
   if (!spec) return;
   const variant = spec.group === 'seal' && kind !== 'seal';
-  const n = {id: nextId(), kind: variant ? 'seal' : kind, x: snapCoordinate(x, bypassSnap), y: snapCoordinate(y, bypassSnap), w: spec.w, h: spec.h, tag: spec.tag ?? kind, notes: '', ports: []};
+  const n = {id: nextId(), kind: variant ? 'seal' : kind, x: snapCoordinate(x, bypassSnap), y: snapCoordinate(y, bypassSnap), w: spec.w, h: spec.h, tag: spec.tag ?? kind, notes: '', ports: defaultPorts(kind)};
   if (variant) n.sealVariant = kind;
   if (isInstrument(kind)) n.number = nextTagNumber(kind);
   if (spec.svg) { n.artworkSource = 'media'; n.artworkVersion = spec.version; }
@@ -258,7 +258,7 @@ function detachFromLine(n) {
   };
   state.pipes.splice(state.pipes.indexOf(first), 1, joined);
   state.pipes.splice(state.pipes.indexOf(second), 1);
-  n.ports = [];
+  n.ports = defaultPorts(n.kind);
   return true;
 }
 

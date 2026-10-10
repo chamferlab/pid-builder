@@ -11,8 +11,8 @@ The browser restores the last drawing automatically. Choose **New** for an empty
 ## Build a loop
 
 1. Drag a symbol from the left palette onto the sheet. Clicking a palette item places it at the center of the view. Use the search box to filter the palette.
-2. Choose **Pipe** (or press **P**), click the symbol where the pipe starts, then click the symbol where it ends. A connection port is created at each point you click, and the pipe is routed between them. The Pipe tool stays active so you can keep connecting; press **Esc** when done.
-3. Drag symbols to reposition them. Connected pipes follow and re-route.
+2. Choose **Pipe** (or press **P**), click where the pipe starts, then click where it ends. Equipment and fittings already have a port on each nozzle; click one to use it. Clicking anywhere else on a symbol creates a port at that point. The pipe is routed between the two ports. The Pipe tool stays active so you can keep connecting; press **Esc** when done.
+3. Drag symbols to reposition them. Connected pipes follow and re-route, and guide lines appear when a symbol lines up with another.
 4. Drop a valve, instrument, or junction onto a pipe to insert it. Alt-drag it off the pipe to take it out again.
 5. Select a pipe to set its line data, color, flow arrow, and route. Select a symbol to edit its caption, notes, size, and orientation, and an instrument's tag number.
 6. Click blank space to fill in the title block and manage templates. Select a group you will need again and choose **Save as template**.
@@ -51,6 +51,12 @@ With several symbols selected, use **Properties → Align symbols** to align the
 
 **Duplicate** (or **Ctrl/Cmd+D**) copies the symbols and any pipes between them, offset as a group. **Delete** removes the group and its connected pipes; a single valve, instrument, or two-way junction sitting in a line is taken out of the line instead, and the line stays. Group moves, alignment, duplication, and deletion each form one undo step.
 
+### Alignment guides
+
+While you drag a symbol or a group, it catches on nearby alignments with the other symbols and a pink guide line shows what it lined up with. Like aligns with like: a port with a port (solid line), a center with a center, or an edge with an edge (dashed lines). Lining up two ports is what makes the pipe between them straight. Ports win when two alignments are equally close. The catch distance is 6 screen pixels, so zoom in for finer placement.
+
+Hold **Alt** to drag without guides. The guides are off while **Snap to grid** is on, and while a symbol is being dropped into a pipe.
+
 ### Snap symbols to the grid
 
 Use **Snap to grid** above the canvas to align symbol centers to the visible 25-unit grid when placing, dragging, or duplicating symbols. Hold **Alt** during placement or dragging to position a symbol freely. The toggle is off initially and its setting is remembered in this browser. Manually placed ports and pipe waypoints remain free-moving; dropping an inline symbol onto a pipe aligns it to that pipe even when snapping is on.
@@ -66,7 +72,7 @@ Drop an instrument, isolation valve, check valve, or pipe junction onto an exist
 - An inserted check valve points in the pipe's flow direction when an arrow is set. Rotate or mirror it to change the direction later.
 - Resized symbols fit using their current size; insertion aligns them with the target line.
 - Moving a connected symbol retains its existing connections.
-- To take a symbol out of its line, hold **Alt** and drag it off the pipe, or select it and press **Delete**. The two sections become one pipe again, keeping the line's number, color, flow arrow, and bends. The symbol is left without ports and can be dropped onto another pipe, even in the same drag. Alt also suspends snapping, so a connected inline symbol cannot be Alt-dragged to an off-grid position.
+- To take a symbol out of its line, hold **Alt** and drag it off the pipe, or select it and press **Delete**. The two sections become one pipe again, keeping the line's number, color, flow arrow, and bends. The symbol is left unconnected and can be dropped onto another pipe, even in the same drag. Alt also suspends snapping, so a connected inline symbol cannot be Alt-dragged to an off-grid position.
 - Both resulting pipe sections inherit the original line color.
 
 ### Resize, rotate, and mirror
@@ -121,7 +127,7 @@ A new drawing has a frame and a title block in its bottom-right corner. With not
 
 ## Symbol palette
 
-The mechanical seal palette includes a single seal and six dual seal variants: back-to-back, face-to-face, and face-to-back, each with or without a plug seal. New seals start without connection ports; the Pipe tool adds them where you click.
+The mechanical seal palette includes a single seal and six dual seal variants: back-to-back, face-to-face, and face-to-back, each with or without a plug seal. Seals start without connection ports; the Pipe tool adds them where you click.
 
 Each seal has its own artwork, so different types can coexist in one drawing. Any `+` marks still printed in artwork are only placement guides; click them with the Pipe tool to make real connection points. Seals can be moved, transformed, duplicated, and deleted.
 
@@ -129,9 +135,9 @@ Instrumentation includes **PI, PT, TI, TT, FI, FT, and PDIT**. Each new instrume
 
 Equipment includes a **reservoir**, **reservoir with N₂ top connection**, **accumulator**, **cooler**, **cooler with two coils**, **heater**, **circulating pump**, **air driven pump**, and **dome-loaded pressure control valve**. Line fittings are an **isolation valve**, **check valve**, **drain**, **vent**, and a pipe junction.
 
-All equipment is drawn as one set: the same dark line weight as the instruments and fittings, with light tints taken from the seal artwork — blue for liquid, yellow for gas, orange for heat. Each symbol is an SVG in `media/`, drawn at canvas scale (one SVG unit is one drawing unit, and the `viewBox` is the symbol's box), so you can open it in Inkscape, edit it, and rebuild. The short stubs on each symbol mark its usual connections; ports go wherever you click.
+All equipment is drawn as one set: the same dark line weight as the instruments and fittings, with light tints taken from the seal artwork — blue for liquid, yellow for gas, orange for heat. Each symbol is an SVG in `media/`, drawn at canvas scale (one SVG unit is one drawing unit, and the `viewBox` is the symbol's box), so you can open it in Inkscape, edit it, and rebuild. A new piece of equipment has a port at the open end of each nozzle drawn in its artwork; you can remove those you do not need and add others anywhere. The accumulator has one port, at the bottom; its top is the gas charging valve. The heater's side lead is electrical and has no port.
 
-Valves start without ports when placed on empty canvas; dropping one onto a pipe adds two line ports and connects it automatically. Drains and vents are terminal symbols rather than inline components.
+Valves have a port at each end; dropping one onto a pipe connects both automatically. Drains and vents are terminal symbols with a single port. Only newly placed symbols get these ports: equipment in existing drawings and templates keeps the ports it has.
 
 Drawings saved with earlier equipment artwork open with the new symbols. Where a symbol changed size, its ports keep their relative positions, so check that they still sit on the nozzle you meant.
 
@@ -147,7 +153,7 @@ Keyboard shortcuts inside text fields retain the browser's normal text-editing b
 
 | Action | How |
 | --- | --- |
-| Add a port | Use the **Pipe** tool, or choose **+ Port** and click a symbol. Works on transformed symbols too. |
+| Add a port | Equipment and fittings come with ports on their nozzles. For any other point, use the **Pipe** tool, or choose **+ Port** and click a symbol. Works on transformed symbols too. |
 | Take a symbol out of a line | Alt-drag a valve, instrument, or two-way junction off the pipe, or select it and press Delete. The two sections become one pipe again and keep the line's number, colour, and flow arrow. |
 | Remove a port | Select its symbol and click the port's chip in Properties, or Alt-click the port. Connected pipes on that port are removed too. |
 | Pan | Drag empty sheet space, or drag with the middle mouse button. |
@@ -190,16 +196,16 @@ python3 scripts/build.py      # after editing src/ or media/
 python3 scripts/test-app.py   # needs Firefox
 ```
 
-After editing an SVG in `media/`, rebuild and reload the page. Equipment needs nothing else. The seal drawings sit on a larger Inkscape page and are cropped using the bounds recorded in `BOUNDS` in `scripts/build.py`; update those if a seal's size or position on its page changes. To add an equipment symbol, add its SVG to `media/` and an entry to `EQUIPMENT` in the build script.
+After editing an SVG in `media/`, rebuild and reload the page. Equipment needs nothing else. The seal drawings sit on a larger Inkscape page and are cropped using the bounds recorded in `BOUNDS` in `scripts/build.py`; update those if a seal's size or position on its page changes. To add an equipment symbol, add its SVG to `media/`, an entry to `EQUIPMENT` in the build script, and its nozzle ends to `PORTS` there. `PORTS` lists each symbol's default ports in the SVG's own coordinates; update it when you move a nozzle.
 
-The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, and templates. Dragging a template tile onto the sheet and the PNG export are not covered.
+The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, templates, default ports, and alignment guides. Dragging a template tile onto the sheet and the PNG export are not covered.
 
 ## Current scope
 
 This is a drawing prototype, not a validated P&ID or an API-plan generator. Known limits:
 
 - Automatic routing avoids symbols but not other pipes, so parallel runs can overlap until you move one, and crossings are not marked.
-- Every symbol starts without ports, including equipment whose artwork shows nozzles.
+- Seals and instruments start without ports. Default equipment ports are listed by hand in the build script, so they can drift from the artwork if a nozzle is moved.
 - Tag numbers run per instrument type; instruments of one loop share a number only if you set it.
 - Templates live in one browser and travel only through their export file.
 - The equipment symbols follow common conventions but have not been checked against a drawing standard.
@@ -208,10 +214,8 @@ This is a drawing prototype, not a validated P&ID or an API-plan generator. Know
 
 In planned order:
 
-1. **Default ports on equipment** — ports already placed on the nozzles drawn in each symbol, so a cooler or reservoir connects in one click.
-2. **Alignment guides** — lines that appear while dragging when a symbol lines up with another's center or edge.
-3. **Pipes that respect each other** — spacing between parallel runs and a hop mark where pipes cross.
-4. **PDF export** of the framed sheet.
-5. **Built-in seal plan templates** (Plan 52, 53A, 53B, 54) shipped inside the HTML, once the user templates have settled.
+1. **Pipes that respect each other** — spacing between parallel runs and a hop mark where pipes cross.
+2. **PDF export** of the framed sheet.
+3. **Built-in seal plan templates** (Plan 52, 53A, 53B, 54) shipped inside the HTML, once the user templates have settled.
 
 Smaller items: line size and spec shown on the pipe, a legend generated from the symbols used, more title block fields, and drawing validation.

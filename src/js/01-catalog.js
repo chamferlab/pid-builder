@@ -30,10 +30,10 @@ const INSTRUMENTS = {
 };
 // Line fittings are drawn in code (05-symbols.js) because they turn with the pipe they sit in.
 const FITTINGS = {
-  'isolation-valve': {name: 'Isolation valve', detail: 'Inline shutoff valve', group: 'equipment', w: 96, h: 80, tag: 'ISOLATION VALVE', inline: true},
-  'check-valve': {name: 'Check valve', detail: 'One-way flow valve', group: 'equipment', w: 96, h: 80, tag: 'CHECK VALVE', inline: true},
-  drain: {name: 'Drain', detail: 'Line termination', group: 'equipment', w: 70, h: 90, tag: 'DRAIN'},
-  vent: {name: 'Vent', detail: 'Line termination', group: 'equipment', w: 70, h: 90, tag: 'VENT'},
+  'isolation-valve': {name: 'Isolation valve', detail: 'Inline shutoff valve', group: 'equipment', w: 96, h: 80, tag: 'ISOLATION VALVE', inline: true, ports: [{id: 'L', x: -48, y: 0}, {id: 'R', x: 48, y: 0}]},
+  'check-valve': {name: 'Check valve', detail: 'One-way flow valve', group: 'equipment', w: 96, h: 80, tag: 'CHECK VALVE', inline: true, ports: [{id: 'L', x: -48, y: 0}, {id: 'R', x: 48, y: 0}]},
+  drain: {name: 'Drain', detail: 'Line termination', group: 'equipment', w: 70, h: 90, tag: 'DRAIN', ports: [{id: 'P1', x: 0, y: -45}]},
+  vent: {name: 'Vent', detail: 'Line termination', group: 'equipment', w: 70, h: 90, tag: 'VENT', ports: [{id: 'P1', x: 0, y: 45}]},
   junction: {name: 'Pipe junction', detail: 'Branch connection', group: 'equipment', w: 44, h: 44, tag: ''}
 };
 // Palette order: instruments, then seals and equipment from media/, then fittings.
@@ -45,6 +45,8 @@ specs.seal = {name: 'Mechanical seal', group: 'seal', w: specs[DEFAULT_SEAL].w, 
 
 const JUNCTION_PORTS = [{id: 'L', x: -22, y: 0}, {id: 'R', x: 22, y: 0}, {id: 'T', x: 0, y: -22}, {id: 'B', x: 0, y: 22}];
 
+// The ports a new symbol of this kind starts with, on the nozzles its artwork shows.
+const defaultPorts = kind => structuredClone(specs[kind]?.ports || []);
 const isInstrument = kind => specs[kind]?.group === 'instrument';
 // Symbols that can be dropped onto a pipe to split it.
 const isInsertable = kind => isInstrument(kind) || kind === 'junction' || !!specs[kind]?.inline;

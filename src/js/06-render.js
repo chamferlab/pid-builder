@@ -190,6 +190,9 @@ function renderOverlay() {
     const a = portPos(pending), node = byId(pending.node);
     if (a) mk('path', {id: 'preview', d: pipeGeometry(a, drag.cursor, null, {da: portFacing(pending), boxA: nodeBox(node)}).path, class: 'wire preview', 'pointer-events': 'none'}, layer);
   }
+  for (const guide of drag?.guides || []) {
+    mk('line', {class: `align-guide ${guide.type}`, x1: guide.x1, y1: guide.y1, x2: guide.x2, y2: guide.y2, 'pointer-events': 'none'}, layer);
+  }
   if (drag?.type === 'marquee') {
     const {start, cursor} = drag;
     mk('rect', {class: 'marquee', x: Math.min(start.x, cursor.x), y: Math.min(start.y, cursor.y), width: Math.abs(cursor.x - start.x), height: Math.abs(cursor.y - start.y)}, layer);
