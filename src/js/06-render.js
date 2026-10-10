@@ -58,9 +58,10 @@ function renderPipes() {
     const r = pipeRoute(p);
     if (!r) continue;
     const g = r.g, isSelected = selected?.type === 'pipe' && selected.id === p.id, color = pipeColor(p);
-    if (isSelected) mk('path', {d: g.path, class: 'wire-halo editor-only'}, layer);
+    const shown = g.display || g.path;
+    if (isSelected) mk('path', {d: shown, class: 'wire-halo editor-only'}, layer);
     mk('path', {
-      d: g.path, class: `wire${isSelected ? ' selected' : ''}`, fill: 'none', stroke: color, 'stroke-width': 2.6,
+      d: shown, class: `wire${isSelected ? ' selected' : ''}`, fill: 'none', stroke: color, 'stroke-width': 2.6,
       'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke',
       ...(p.service === 'instrument-air' ? {'stroke-dasharray': '9 6'} : {})
     }, layer);

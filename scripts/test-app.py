@@ -841,6 +841,47 @@ def run_editing_tests(browser):
     b.call('WebDriver:Navigate', {'url': url})
     print('PASS: templates are saved, placed, edited, renamed, exported, and imported', flush=True)
 
+    # Automatic routes keep a gap from pipes already routed, and a horizontal run hops over a vertical one.
+    def pi(node_id, x, y, *ports):
+        return dict(id=node_id, kind='PI', x=x, y=y, w=90, h=90, tag=node_id, notes='', ports=[dict(id=name, x=px, y=py) for name, px, py in ports])
+
+    def link(pipe_id, a, port_a, b, port_b, **extra):
+        return dict(id=pipe_id, lineId=pipe_id, a=dict(node=a, port=port_a), b=dict(node=b, port=port_b), **extra)
+
+    def shown(index):
+        return b.js("return document.querySelectorAll('#pipes .wire:not(.hit)')[arguments[0]].getAttribute('d')", [index])
+
+    parallel = dict(title='Parallel', nodes=[pi('n0', 200, 200, ('R', 45, 0)), pi('n1', 800, 500, ('L', -45, 0)), pi('n2', 200, 300, ('R', 45, 0)), pi('n3', 800, 600, ('L', -45, 0))],
+                    pipes=[link('n4', 'n0', 'R', 'n1', 'L'), link('n5', 'n2', 'R', 'n3', 'L')], nextId=6, sealSvg=None, portModeVersion=3)
+    load(parallel)
+    assert wire_points(0) == [[245, 200], [500, 200], [500, 500], [755, 500]]
+    assert wire_points(1) == [[245, 300], [486, 300], [486, 600], [755, 600]], 'the second pipe stands one gap clear, on the side without a crossing'
+    assert 'A' not in shown(0) + shown(1)
+    # A pipe with a fixed route keeps it; the automatic one moves instead, whatever the drawing order.
+    load(dict(parallel, pipes=[link('n4', 'n0', 'R', 'n1', 'L'), link('n5', 'n2', 'R', 'n3', 'L', route=dict(axis='x', value=500))]))
+    assert wire_points(1) == [[245, 300], [500, 300], [500, 600], [755, 600]]
+    assert wire_points(0)[1][0] in (486, 514) and wire_points(0)[1][0] == wire_points(0)[2][0]
+
+    crossing = dict(title='Crossing', nodes=[pi('n0', 200, 400, ('R', 45, 0)), pi('n1', 800, 400, ('L', -45, 0)), pi('n2', 500, 150, ('B', 0, 45)), pi('n3', 500, 650, ('T', 0, -45))],
+                    pipes=[link('n4', 'n0', 'R', 'n1', 'L'), link('n5', 'n2', 'B', 'n3', 'T')], nextId=6, sealSvg=None, portModeVersion=3)
+    load(crossing)
+    assert shown(0) == 'M 245 400 L 494 400 A 6 6 0 0 1 506 400 L 755 400' and shown(1) == 'M 500 195 L 500 605'
+    exported_hop = b.async_js("""const done=arguments[arguments.length-1],original=URL.createObjectURL;URL.createObjectURL=function(blob){blob.text().then(markup=>done(new DOMParser().parseFromString(markup,'image/svg+xml').querySelector('#pipes .wire').getAttribute('d')));return original.call(this,blob)};document.getElementById('exportSVG').click();URL.createObjectURL=original;""")
+    assert exported_hop == shown(0)
+    press(500, 150)
+    key('Delete')              # the vertical pipe goes with its symbol, and so does the hop
+    assert len(state()['pipes']) == 1 and 'A' not in shown(0)
+    click('undo')
+    assert 'A' in shown(0)
+    # A tee is a junction, not a crossing.
+    b.js("document.getElementById('toolPipe').click();return true")
+    press(350, 400)
+    key('Escape')
+    key('Escape')
+    assert len(state()['pipes']) == 3 and any(n['kind'] == 'junction' for n in state()['nodes'])
+    assert sum(shown(i).count('A') for i in range(3)) == 1, 'only the true crossing hops'
+    print('PASS: parallel automatic runs keep a gap, and crossings are drawn as hops', flush=True)
+
     # Dragging lines a symbol up with another: port with port first, then centres and edges.
     guides = dict(title='Guides', nodes=[
         dict(id='n0', kind='cooler', x=400, y=400, w=130, h=200, tag='A', notes='', ports=[dict(id='P1', x=65, y=-40)], artworkSource='media'),

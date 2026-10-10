@@ -6,6 +6,8 @@
 //   {elbow: 'horizontal'|'vertical'}   a single corner
 //   {waypoints: [{x, y}, ...]}    fixed bends the route passes through
 
+const PIPE_GAP = 14;     // clear distance kept between parallel automatic runs
+const HOP_RADIUS = 6;    // size of the arc where one pipe crosses another
 const DIRS = {L: {x: -1, y: 0}, R: {x: 1, y: 0}, T: {x: 0, y: -1}, B: {x: 0, y: 1}};
 const pathData = points => `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')}`;
 const hasWaypoints = route => Array.isArray(route?.waypoints) && route.waypoints.length > 0;
@@ -56,8 +58,56 @@ function routeCost(points, va, vb, boxes) {
   return cost;
 }
 
+// The straight runs of a path, as lanes other pipes should keep clear of.
+function lanesOf(points) {
+  const lanes = [];
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i - 1], q = points[i], vertical = p.x === q.x;
+    if (p.x === q.x && p.y === q.y) continue;
+    lanes.push({vertical, at: vertical ? p.x : p.y, lo: vertical ? Math.min(p.y, q.y) : Math.min(p.x, q.x), hi: vertical ? Math.max(p.y, q.y) : Math.max(p.x, q.x)});
+  }
+  return lanes;
+}
+// How much of a path runs on top of, or closer than the pipe gap to, pipes already routed.
+function crowding(points, lanes) {
+  let total = 0;
+  for (const own of lanesOf(points)) for (const lane of lanes) {
+    if (lane.vertical !== own.vertical || Math.abs(lane.at - own.at) > PIPE_GAP - .5) continue;
+    const shared = Math.min(own.hi, lane.hi) - Math.max(own.lo, lane.lo);
+    if (shared > 2) total += shared + 30;
+  }
+  return total;
+}
+// How many times a path crosses pipes already routed.
+function crossingCount(points, lanes) {
+  let count = 0;
+  for (const own of lanesOf(points)) for (const lane of lanes) {
+    if (lane.vertical !== own.vertical && own.at > lane.lo + 1 && own.at < lane.hi - 1 && lane.at > own.lo + 1 && lane.at < own.hi - 1) count++;
+  }
+  return count;
+}
+// Moves the inner runs of a path sideways, a gap at a time, where they crowd other pipes.
+// The runs that meet the ports stay put, so the pipe still leaves and arrives the same way.
+function spreadFromLanes(points, lanes, score) {
+  // Crowding matters most; between equally clear positions, the one with fewer crossings wins.
+  const total = path => score(path) + 6 * crowding(path, lanes) + 40 * crossingCount(path, lanes);
+  if (points.length < 4 || !crowding(points, lanes)) return points;
+  let best = points, bestCost = total(points);
+  for (let i = 1; i < points.length - 2; i++) {
+    const axis = best[i].x === best[i + 1].x ? 'x' : 'y', from = best;
+    for (const step of [1, -1, 2, -2, 3, -3]) {
+      const trial = from.map(p => ({...p}));
+      trial[i][axis] += step * PIPE_GAP; trial[i + 1][axis] += step * PIPE_GAP;
+      const cost = total(trial);
+      if (cost < bestCost - .01) { best = trial; bestCost = cost; }
+    }
+  }
+  return simplifyPipePoints(best);
+}
+
 // Picks the best of a small family of orthogonal paths between two ports.
-// ends: {da, db} port facings, {boxA, boxB} the connected symbols, {obstacles} other symbols.
+// ends: {da, db} port facings, {boxA, boxB} the connected symbols, {obstacles} other symbols,
+// {lanes} runs of pipes already routed, which this one is spread away from.
 function autoRoute(a, b, ends = {}) {
   const va = DIRS[ends.da], vb = DIRS[ends.db], margin = 24, stub = 22;
   const boxes = [];
@@ -88,6 +138,7 @@ function autoRoute(a, b, ends = {}) {
     const points = simplifyPipePoints(candidate), cost = routeCost(points, va, vb, boxes);
     if (cost < bestCost) { best = points; bestCost = cost; }
   }
+  if (ends.lanes?.length) best = spreadFromLanes(best, ends.lanes, path => routeCost(path, va, vb, boxes));
 
   const g = {auto: true, points: best, path: pathData(best)};
   // Straight and three-segment results expose a middle segment that can be dragged.
@@ -129,15 +180,70 @@ function pipeGeometry(a, b, route, ends = {}) {
   return autoRoute(a, b, ends);
 }
 
-// Everything needed to draw one pipe, or null if a port no longer exists.
-function pipeRoute(pipe) {
+const isAutomatic = pipe => !pipe.route || (Array.isArray(pipe.route.waypoints) && !pipe.route.waypoints.length);
+
+// One pipe on its own: {a, b, g, points}, or null if a port no longer exists.
+function routePipe(pipe, lanes = null) {
   const a = portPos(pipe.a), b = portPos(pipe.b);
   if (!a || !b) return null;
   const nodeA = byId(pipe.a.node), nodeB = byId(pipe.b.node), ends = {da: portFacing(pipe.a), db: portFacing(pipe.b), boxA: nodeBox(nodeA), boxB: nodeBox(nodeB)};
-  const automatic = !pipe.route || (Array.isArray(pipe.route.waypoints) && !pipe.route.waypoints.length);
-  if (automatic) ends.obstacles = state.nodes.filter(n => n !== nodeA && n !== nodeB && n.kind !== 'junction').map(n => nodeBox(n, -2));
+  if (isAutomatic(pipe)) {
+    ends.obstacles = state.nodes.filter(n => n !== nodeA && n !== nodeB && n.kind !== 'junction').map(n => nodeBox(n, -2));
+    ends.lanes = lanes;
+  }
   const g = pipeGeometry(a, b, pipe.route, ends);
   return {a, b, g, points: g.points};
+}
+
+// The path of a pipe as drawn: where a horizontal run crosses another pipe's vertical run, it hops over.
+function hopPath(points, crossings) {
+  let d = `M ${points[0].x} ${points[0].y}`, hops = 0;
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i - 1], q = points[i];
+    if (p.y === q.y && p.x !== q.x) {
+      const forward = q.x > p.x, lo = Math.min(p.x, q.x) + HOP_RADIUS + 2, hi = Math.max(p.x, q.x) - HOP_RADIUS - 2;
+      const xs = crossings.filter(c => c.at > lo && c.at < hi && p.y > c.lo + 3 && p.y < c.hi - 3).map(c => c.at).sort((m, n) => forward ? m - n : n - m);
+      let last = null;
+      for (const x of xs) {
+        if (last !== null && Math.abs(x - last) < 2 * HOP_RADIUS + 2) continue;
+        const sign = forward ? 1 : -1;
+        d += ` L ${x - sign * HOP_RADIUS} ${p.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${forward ? 1 : 0} ${x + sign * HOP_RADIUS} ${p.y}`;
+        last = x; hops++;
+      }
+    }
+    d += ` L ${q.x} ${q.y}`;
+  }
+  return hops ? d : null;
+}
+
+// All pipes are laid out together: pipes with a fixed route first, then the automatic ones in
+// drawing order, each kept clear of those before it. The result is reused until something that
+// affects routing changes.
+let layoutCache = {key: null, routes: new Map()};
+function layoutKey() {
+  let key = '';
+  for (const n of state.nodes) {
+    key += `${n.id},${n.kind},${n.x},${n.y},${n.w},${n.h},${n.rotation || 0},${n.scale || 1},${n.mirrorX ? 1 : 0}${n.mirrorY ? 1 : 0},${n.orientation || ''}:${n.ports.map(p => `${p.id},${p.x},${p.y}`).join('|')};`;
+  }
+  for (const p of state.pipes) key += `${p.id},${p.a.node},${p.a.port},${p.b.node},${p.b.port},${p.route ? JSON.stringify(p.route) : ''};`;
+  return key;
+}
+function pipeLayout() {
+  const key = layoutKey();
+  if (layoutCache.key === key) return layoutCache.routes;
+  const routes = new Map(), lanes = [];
+  const place = (pipe, r) => { routes.set(pipe.id, r); if (r) lanes.push(...lanesOf(r.points).map(lane => ({...lane, id: pipe.id}))); };
+  for (const pipe of state.pipes) if (!isAutomatic(pipe)) place(pipe, routePipe(pipe));
+  for (const pipe of state.pipes) if (isAutomatic(pipe)) place(pipe, routePipe(pipe, lanes));
+  const verticals = lanes.filter(lane => lane.vertical);
+  for (const [id, r] of routes) if (r) r.g.display = hopPath(r.points, verticals.filter(lane => lane.id !== id)) || r.g.path;
+  layoutCache = {key, routes};
+  return routes;
+}
+// Everything needed to draw one pipe, or null if a port no longer exists.
+function pipeRoute(pipe) {
+  const routes = pipeLayout();
+  return routes.has(pipe.id) && state.pipes.includes(pipe) ? routes.get(pipe.id) : routePipe(pipe);
 }
 // The axis a centered three-segment route would use for this pipe.
 function defaultAxis(pipe) {

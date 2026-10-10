@@ -29,7 +29,11 @@ Pipes cannot connect a symbol to itself. A port shows as a small filled dot once
 
 ### Pipe routes
 
-New pipes are routed automatically: they leave each port outward from the side of the symbol it sits on, and go around symbols instead of through them. Automatic routes update as you move things. They do not avoid other pipes.
+New pipes are routed automatically: they leave each port outward from the side of the symbol it sits on, and go around symbols instead of through them. Automatic routes update as you move things.
+
+Pipes also make room for each other. Where an automatic route would run on top of another pipe, or closer than 14 units beside it, its inner runs move aside a gap at a time, to the side with fewer crossings. Pipes whose route you have set stay exactly where they are, and automatic pipes are placed around them in the order they were drawn. The runs that meet a port cannot move, so two pipes leaving ports that are in line with each other can still overlap; move a symbol or add a bend there.
+
+Where a horizontal run crosses another pipe's vertical run, it is drawn with a small hop, on screen and in exports. A tee is a junction, not a crossing, and has no hop.
 
 Select a pipe to adjust it. Drag the handles on the pipe, or use **Properties → Route**:
 
@@ -74,6 +78,7 @@ Drop an instrument, isolation valve, check valve, or pipe junction onto an exist
 - Moving a connected symbol retains its existing connections.
 - To take a symbol out of its line, hold **Alt** and drag it off the pipe, or select it and press **Delete**. The two sections become one pipe again, keeping the line's number, color, flow arrow, and bends. The symbol is left unconnected and can be dropped onto another pipe, even in the same drag. Alt also suspends snapping, so a connected inline symbol cannot be Alt-dragged to an off-grid position.
 - Both resulting pipe sections inherit the original line color.
+- Inserting a symbol fixes the pipe's bends where they were, so the two sections no longer move aside for other pipes; choose **Route → Automatic** on a section to hand it back.
 
 ### Resize, rotate, and mirror
 
@@ -173,7 +178,7 @@ Older saved drawings are converted once when opened: predefined ports on seals, 
 | --- | --- |
 | **Save project** | Downloads editable JSON with symbols, ports, connections, routes, line data, colors, transformations, captions, tag numbers, notes, and the title block fields. Templates are not in it; they have their own export. |
 | **Open project** | Loads a saved project JSON. |
-| **Export SVG** | Downloads a clean drawing with embedded SVG artwork, line colors, and the frame and title block when they are on, without the grid, handles, previews, or selection marks. |
+| **Export SVG** | Downloads a clean drawing with embedded SVG artwork, line colors, crossing hops, and the frame and title block when they are on, without the grid, handles, previews, or selection marks. |
 | **Export PNG** | Downloads a raster image of the same sheet at twice the SVG dimensions. |
 | **Templates → Export / Import** | Downloads or loads the template library as `seal-loop-templates.json`. See [Templates](#templates). |
 
@@ -198,13 +203,13 @@ python3 scripts/test-app.py   # needs Firefox
 
 After editing an SVG in `media/`, rebuild and reload the page. Equipment needs nothing else. The seal drawings sit on a larger Inkscape page and are cropped using the bounds recorded in `BOUNDS` in `scripts/build.py`; update those if a seal's size or position on its page changes. To add an equipment symbol, add its SVG to `media/`, an entry to `EQUIPMENT` in the build script, and its nozzle ends to `PORTS` there. `PORTS` lists each symbol's default ports in the SVG's own coordinates; update it when you move a nozzle.
 
-The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, templates, default ports, and alignment guides. Dragging a template tile onto the sheet and the PNG export are not covered.
+The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, templates, default ports, alignment guides, pipe spacing, and crossing hops. Dragging a template tile onto the sheet and the PNG export are not covered.
 
 ## Current scope
 
 This is a drawing prototype, not a validated P&ID or an API-plan generator. Known limits:
 
-- Automatic routing avoids symbols but not other pipes, so parallel runs can overlap until you move one, and crossings are not marked.
+- Automatic pipes keep clear of other pipes only along their inner runs, and take the first clear position rather than the best overall arrangement; a crowded drawing still needs some routes set by hand. Drawings saved earlier may show automatic routes shifted by a gap where they used to overlap.
 - Seals and instruments start without ports. Default equipment ports are listed by hand in the build script, so they can drift from the artwork if a nozzle is moved.
 - Tag numbers run per instrument type; instruments of one loop share a number only if you set it.
 - Templates live in one browser and travel only through their export file.
@@ -214,8 +219,7 @@ This is a drawing prototype, not a validated P&ID or an API-plan generator. Know
 
 In planned order:
 
-1. **Pipes that respect each other** — spacing between parallel runs and a hop mark where pipes cross.
-2. **PDF export** of the framed sheet.
-3. **Built-in seal plan templates** (Plan 52, 53A, 53B, 54) shipped inside the HTML, once the user templates have settled.
+1. **PDF export** of the framed sheet.
+2. **Built-in seal plan templates** (Plan 52, 53A, 53B, 54) shipped inside the HTML, once the user templates have settled.
 
 Smaller items: line size and spec shown on the pipe, a legend generated from the symbols used, more title block fields, and drawing validation.
