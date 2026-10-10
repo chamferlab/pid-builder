@@ -101,18 +101,19 @@ Select a pipe and choose **Properties → Flow arrow** to show an arrow from its
 
 ## Symbol palette
 
-The mechanical seal palette includes the original single seal and six dual seal variants: back-to-back, face-to-face, and face-to-back, each with or without a plug seal. New seals start without connection ports; the Pipe tool adds them where you click.
+The mechanical seal palette includes a single seal and six dual seal variants: back-to-back, face-to-face, and face-to-back, each with or without a plug seal. New seals start without connection ports; the Pipe tool adds them where you click.
 
 Each seal has its own artwork, so different types can coexist in one drawing. Any `+` marks still printed in artwork are only placement guides; click them with the Pipe tool to make real connection points. Seals can be moved, transformed, duplicated, and deleted.
 
 Instrumentation includes **PI, PT, TI, TT, FI, FT, and PDIT**. New instruments also start without ports. Inline insertion creates the two line ports required to split an existing pipe.
 
-Equipment includes the supplied **accumulator, circulating pump, cooler, heater, reservoir, and dome-loaded pressure control valve**, plus a bladder-accumulator reservoir, an N₂-connected reservoir, an **air driven pump**, **isolation valve**, **check valve**, **drain**, **vent**, and a four-way pipe junction. The six supplied equipment types use their SVG artwork on the canvas. The new symbols use built-in vector artwork, so they remain available offline and in exports.
+Equipment includes a **reservoir**, **reservoir with N₂ top connection**, **accumulator**, **cooler**, **cooler with two coils**, **heater**, **circulating pump**, **air driven pump**, and **dome-loaded pressure control valve**. Line fittings are an **isolation valve**, **check valve**, **drain**, **vent**, and a pipe junction.
 
-Place ports manually on the air driven pump, drain, and vent at the connections you need. Valves also start without ports when placed on empty canvas; dropping one onto a pipe adds two line ports and connects it automatically. Drains and vents are terminal symbols rather than inline components.
+All equipment is drawn as one set: the same dark line weight as the instruments and fittings, with light tints taken from the seal artwork — blue for liquid, yellow for gas, orange for heat. Each symbol is an SVG in `media/`, drawn at canvas scale (one SVG unit is one drawing unit, and the `viewBox` is the symbol's box), so you can open it in Inkscape, edit it, and rebuild. The short stubs on each symbol mark its usual connections; ports go wherever you click.
 
-Place equipment ports on the nozzles you want to use. Saved circulating pump symbols update to revised artwork while retaining manually placed ports and transformations.
-The pressure control valve artwork has inlet and outlet stubs plus a top dome connection; use **+ Port** on the connections needed in your drawing.
+Valves start without ports when placed on empty canvas; dropping one onto a pipe adds two line ports and connects it automatically. Drains and vents are terminal symbols rather than inline components.
+
+Drawings saved with earlier equipment artwork open with the new symbols. Where a symbol changed size, its ports keep their relative positions, so check that they still sit on the nozzle you meant.
 
 ## Undo and redo
 
@@ -158,8 +159,7 @@ Browser storage is local and can be cleared; **Save project** is the portable ba
 - `src/index.html`, `src/styles.css` — page layout and styling.
 - `src/js/` — the application, concatenated in filename order into one script:
   `01-catalog` (symbols and constants), `02-state` (drawing state, undo, autosave), `03-geometry`, `04-routing` (pipe routes), `05-symbols` (built-in artwork), `06-render`, `07-inspector` (Properties panel), `08-actions` (edits), `09-interactions` (pointer and keyboard), `10-io` (save, open, import, export), `11-main` (palette and startup).
-- `src/assets/single-seal.svgfrag` — artwork for the original single seal.
-- `media/` — source SVGs for dual seals and equipment.
+- `media/` — source SVGs for the seals and all equipment.
 - `scripts/build.py` — builds `PID-Builder.html`; standard library only.
 - `scripts/test-app.py` — Firefox regression tests; standard library only.
 
@@ -168,7 +168,7 @@ python3 scripts/build.py      # after editing src/ or media/
 python3 scripts/test-app.py   # needs Firefox
 ```
 
-After editing a source SVG, update its recorded artwork bounds in `scripts/build.py` if its size or location changed, then rebuild and reload the page. To add a media symbol, add its SVG to `media/` and an entry to `BOUNDS` (and `EQUIPMENT`) in the build script.
+After editing an SVG in `media/`, rebuild and reload the page. Equipment needs nothing else. The seal drawings sit on a larger Inkscape page and are cropped using the bounds recorded in `BOUNDS` in `scripts/build.py`; update those if a seal's size or position on its page changes. To add an equipment symbol, add its SVG to `media/` and an entry to `EQUIPMENT` in the build script.
 
 The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion, line data, snapping, export, the Pipe tool, automatic routing, area selection, and keyboard editing.
 

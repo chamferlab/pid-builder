@@ -1,100 +1,11 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
-   version="1.1"
-   id="svg1"
-   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
-   sodipodi:docname="heater.svg"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview1"
-     pagecolor="#ffffff"
-     bordercolor="#cccccc"
-     borderopacity="1"
-     inkscape:showpageshadow="0"
-     inkscape:pageopacity="1"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm"
-     inkscape:zoom="0.66646401"
-     inkscape:cx="197.30998"
-     inkscape:cy="804.99471"
-     inkscape:window-width="1276"
-     inkscape:window-height="1365"
-     inkscape:window-x="20"
-     inkscape:window-y="20"
-     inkscape:window-maximized="0"
-     inkscape:current-layer="layer1" />
-  <defs
-     id="defs1" />
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1">
-    <rect
-       style="fill:#cccccc;fill-opacity:1;stroke:#000000;stroke-width:1.45109;stroke-dasharray:none;stroke-opacity:1"
-       id="rect1306"
-       width="22.150385"
-       height="76.054924"
-       x="105.40034"
-       y="86.369415"
-       ry="3.2346058" />
-    <path
-       id="rect1307"
-       style="fill:#d38d5f;fill-opacity:1;stroke:#000000;stroke-width:1.06757;stroke-dasharray:none;stroke-opacity:1"
-       d="m 113.21232,94.034603 c -1.85852,0 -3.35419,2.49176 -3.35419,4.35028 v 63.964267 h 13.23478 V 98.120023 c 0,-1.85853 -1.49565,-4.08542 -3.35418,-4.08542 z"
-       sodipodi:nodetypes="ssccsss" />
-    <path
-       id="rect1308"
-       style="fill:#cccccc;fill-opacity:1;stroke:#000000;stroke-width:1.14542;stroke-dasharray:none;stroke-opacity:1"
-       d="m 114.67414,96.288183 c -1.80301,0 -2.5265,1.51814 -2.5265,3.32115 v 62.739817 h 8.87377 V 99.609333 c 0,-1.80301 -0.85587,-3.32115 -2.65888,-3.32115 z"
-       sodipodi:nodetypes="ssccsss" />
-    <rect
-       style="fill:#d38d5f;fill-opacity:1;stroke:#000000;stroke-width:0.800674;stroke-dasharray:none;stroke-opacity:1"
-       id="rect1312"
-       width="4.4578028"
-       height="2.6222484"
-       x="123.0929"
-       y="103.75773"
-       ry="1.3111242" />
-    <rect
-       style="fill:#d38d5f;fill-opacity:1;stroke:#000000;stroke-width:0.800674;stroke-dasharray:none;stroke-opacity:1"
-       id="rect1313"
-       width="4.4578028"
-       height="2.6222484"
-       x="123.0929"
-       y="145.21259"
-       ry="1.3111242" />
-    <rect
-       style="fill:#d38d5f;fill-opacity:1;stroke:#000000;stroke-width:0.800674;stroke-dasharray:none;stroke-opacity:1"
-       id="rect1310"
-       width="4.4578028"
-       height="2.6222484"
-       x="105.40034"
-       y="145.47742"
-       ry="1.3111242" />
-    <rect
-       style="fill:#b3b3b3;fill-opacity:1;stroke:#000000;stroke-width:1.44122;stroke-dasharray:none;stroke-opacity:1"
-       id="rect1311"
-       width="35.627308"
-       height="7.5492816"
-       x="99.125473"
-       y="158.89835"
-       ry="1.3111242" />
-    <rect
-       style="fill:#d38d5f;fill-opacity:1;stroke:#000000;stroke-width:0.800674;stroke-dasharray:none;stroke-opacity:1"
-       id="rect1314"
-       width="4.4578028"
-       height="2.6222484"
-       x="105.40034"
-       y="103.70878"
-       ry="1.3111242" />
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Drawn at canvas scale: one SVG unit is one drawing unit, and the viewBox is the symbol's box. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="200" viewBox="0 0 130 200">
+  <title>Heater</title>
+  <g fill="none" stroke="#253d51" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="25" y="30" width="80" height="140" rx="10" fill="#fff"/>
+    <path d="M 65 0 V 30 M 65 170 V 200 M 119 100 H 130"/>
+    <path d="M 105 85 H 40 V 97 H 92 V 109 H 40 V 121 H 105" stroke="#e9793a" stroke-width="2.6"/>
+    <rect x="105" y="78" width="14" height="50" rx="2" fill="#fff"/>
   </g>
 </svg>

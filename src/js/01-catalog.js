@@ -1,5 +1,5 @@
 // Symbol catalog and drawing constants.
-// MEDIA_SYMBOLS and DEFAULT_SEAL_MARKUP are injected above this file by scripts/build.py.
+// MEDIA_SYMBOLS is injected above this file by scripts/build.py.
 
 const NS = 'http://www.w3.org/2000/svg';
 const STORAGE_KEY = 'seal-loop-pid-v1';
@@ -18,27 +18,30 @@ const PIPE_COLORS = {
   orange: {name: 'Orange', value: '#ea580c'}
 };
 
-const specs = {
+const specs = {};
+const INSTRUMENTS = {
   PI: {name: 'Pressure indicator', group: 'instrument', w: 90, h: 90},
   PT: {name: 'Pressure transmitter', group: 'instrument', w: 90, h: 90},
   TI: {name: 'Temperature indicator', group: 'instrument', w: 90, h: 90},
   TT: {name: 'Temperature transmitter', group: 'instrument', w: 90, h: 90},
   FI: {name: 'Flow indicator', group: 'instrument', w: 90, h: 90},
   FT: {name: 'Flow transmitter', group: 'instrument', w: 90, h: 90},
-  PDIT: {name: 'Differential pressure indicator / transmitter', group: 'instrument', w: 100, h: 90},
-  bladder: {name: 'Reservoir + bladder accumulator', group: 'equipment', w: 170, h: 215, tag: 'BLADDER'},
-  nitrogen: {name: 'Reservoir + N₂ top connection', group: 'equipment', w: 170, h: 215, tag: 'N₂ RESERVOIR'},
-  cooler: {name: 'Dual-coil cooler', group: 'equipment', w: 190, h: 150, tag: 'COOLER'},
-  'air-driven-pump': {name: 'Air driven pump', detail: 'Air operated pump', group: 'equipment', w: 170, h: 150, tag: 'AIR PUMP'},
+  PDIT: {name: 'Differential pressure indicator / transmitter', group: 'instrument', w: 100, h: 90}
+};
+// Line fittings are drawn in code (05-symbols.js) because they turn with the pipe they sit in.
+const FITTINGS = {
   'isolation-valve': {name: 'Isolation valve', detail: 'Inline shutoff valve', group: 'equipment', w: 96, h: 80, tag: 'ISOLATION VALVE', inline: true},
   'check-valve': {name: 'Check valve', detail: 'One-way flow valve', group: 'equipment', w: 96, h: 80, tag: 'CHECK VALVE', inline: true},
   drain: {name: 'Drain', detail: 'Line termination', group: 'equipment', w: 70, h: 90, tag: 'DRAIN'},
   vent: {name: 'Vent', detail: 'Line termination', group: 'equipment', w: 70, h: 90, tag: 'VENT'},
   junction: {name: 'Pipe junction', detail: 'Branch connection', group: 'equipment', w: 44, h: 44, tag: ''}
 };
-Object.assign(specs, MEDIA_SYMBOLS);
-// The single seal uses the original embedded vector artwork rather than a media file.
-specs.seal = {name: 'Single seal', detail: 'Original artwork', group: 'seal', w: 455, h: 500, tag: 'SINGLE SEAL'};
+// Palette order: instruments, then seals and equipment from media/, then fittings.
+Object.assign(specs, INSTRUMENTS, MEDIA_SYMBOLS, FITTINGS);
+// Every seal on the sheet has kind 'seal' and names its drawing in sealVariant. This entry is
+// the kind itself, used for imported artwork; it has no palette tile.
+const DEFAULT_SEAL = 'single-seal';
+specs.seal = {name: 'Mechanical seal', group: 'seal', w: specs[DEFAULT_SEAL].w, h: specs[DEFAULT_SEAL].h, tag: 'SEAL', hidden: true};
 
 const JUNCTION_PORTS = [{id: 'L', x: -22, y: 0}, {id: 'R', x: 22, y: 0}, {id: 'T', x: 0, y: -22}, {id: 'B', x: 0, y: 22}];
 

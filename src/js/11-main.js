@@ -2,7 +2,7 @@
 
 function buildPalette(group, target) {
   for (const [kind, spec] of Object.entries(specs)) {
-    if (spec.group !== group) continue;
+    if (spec.group !== group || spec.hidden) continue;
     const tile = document.createElement('button');
     tile.className = 'item';
     tile.draggable = true;

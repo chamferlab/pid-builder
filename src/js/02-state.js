@@ -69,12 +69,21 @@ function migrateManualPorts(project) {
   return project;
 }
 
-// Saved circulating pumps pick up revised artwork dimensions.
+// When a media drawing has been redrawn at a different size, symbols saved with the old one
+// take the new size, and their ports keep their relative positions.
 function restoreSymbolAssets() {
-  const d = specs['circulating-pump'];
   for (const n of state.nodes) {
-    if (n.kind !== 'circulating-pump' || n.artworkSource !== 'media' || n.artworkVersion === d.version) continue;
-    n.w = d.w; n.h = d.h; n.artworkVersion = d.version;
+    // The single seal used to be built in at 455 by 500; it is now a seal drawing like the others.
+    if (n.kind === 'seal' && !n.sealVariant && !n.sealSvg && !state.sealSvg) {
+      const single = specs[DEFAULT_SEAL], k = single.w / 455;
+      for (const p of n.ports) { p.x = Math.round(p.x * k); p.y = Math.round(p.y * k); }
+      Object.assign(n, {sealVariant: DEFAULT_SEAL, w: single.w, h: single.h, artworkSource: 'media', artworkVersion: single.version});
+    }
+    const spec = specs[n.kind];
+    if (n.artworkSource !== 'media' || !spec?.svg || n.artworkVersion === spec.version) continue;
+    const sx = spec.w / n.w, sy = spec.h / n.h;
+    if (Number.isFinite(sx) && Number.isFinite(sy)) for (const p of n.ports) { p.x = Math.round(p.x * sx); p.y = Math.round(p.y * sy); }
+    n.w = spec.w; n.h = spec.h; n.artworkVersion = spec.version;
   }
 }
 

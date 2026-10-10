@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="76" height="59" viewBox="60.2243 104.0295 75.9266 58.832">
+<!-- Drawn at canvas scale: one SVG unit is one drawing unit, and the viewBox is the symbol's box. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="110" viewBox="0 0 120 110">
   <title>Dome-loaded pressure control valve</title>
-  <g fill="none" stroke="#253d51" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 62.2243 149.96 H 77 M 119.4 149.96 H 134.1509"/>
-    <path d="M 77 140 L 98.2 149.96 L 77 159.92 Z" fill="#fff"/>
-    <path d="M 119.4 140 L 98.2 149.96 L 119.4 159.92 Z" fill="#fff"/>
-    <path d="M 98.2 149.96 V 130"/>
-    <path d="M 86 130 V 121 C 86 114.5 91.5 109.5 98.2 109.5 C 104.9 109.5 110.4 114.5 110.4 121 V 130 Z" fill="#e7f5f5"/>
-    <path d="M 86 130 H 110.4 M 98.2 106.0295 V 109.5"/>
+  <g fill="none" stroke="#253d51" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 0 80 H 32 M 88 80 H 120 M 60 80 V 46 M 60 0 V 14"/>
+    <path d="M 32 62 L 60 80 L 32 98 Z M 88 62 L 60 80 L 88 98 Z" fill="#fff"/>
+    <path d="M 40 46 V 34 C 40 22 49 14 60 14 C 71 14 80 22 80 34 V 46 Z" fill="#fff3c4"/>
   </g>
 </svg>

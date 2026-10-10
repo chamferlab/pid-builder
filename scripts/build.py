@@ -13,31 +13,35 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / 'src'
 SVG = 'http://www.w3.org/2000/svg'
 
-# Artwork bounds measured with SVG getBBox(), in the source viewBox units.
-# Update an entry when the size or position of that drawing changes.
+# The seal drawings sit somewhere on an Inkscape page, so each is cropped to its artwork.
+# Bounds are measured with SVG getBBox(), in the source viewBox units; update an entry
+# when the size or position of that drawing changes.
 BOUNDS = {
+    'single-seal': [11.586, 47.9399, 191.4742, 195.4072],
     'dual-seal-bb-w-plug': [6.0404, 72.4234, 195.2683, 151.9112],
     'dual-seal-bb-wo-plug': [9.3777, 68.3088, 193.1235, 144.0006],
     'dual-seal-ff-w-plug': [2.7294, 60.3508, 204.99, 150.8209],
     'dual-seal-ff-wo-plug': [5.0718, 53.8741, 197.5298, 153.5835],
     'dual-seal-fb-w-plug': [4.8715, 76.4658, 201.0721, 152.605],
     'dual-seal-fb-wo-plug': [5.4387, 57.0521, 201.7727, 160.4755],
-    'accumulator': [75.6388, 47.5058, 49.046, 201.9605],
-    'circulating-pump': [67.6707, 102.3983, 39.2028, 39.2028],
-    'reservoir': [64.1265, 104.6028, 82.5414, 72.7937],
-    'control-valve': [62.2243, 106.0295, 71.9266, 54.832],
-    'cooler': [52.6471, 15.7316, 102.4898, 268.3659],
-    'heater': [59.3427, 15.9501, 87.5195, 266.5757],
 }
-SOURCE_FILES = {'control-valve': 'Control_valve.svg'}
+SOURCE_FILES = {'single-seal': 'single_seal.svg', 'control-valve': 'Control_valve.svg'}
+# Seals are scaled to a common width. The single seal is drawn 1.345 times larger than the dual
+# seals, so it gets the width that gives its parts and outlines the same size as theirs.
+SEAL_WIDTH = 455
+SEAL_WIDTHS = {'single-seal': 336}
 SEAL_ARRANGEMENTS = {'bb': 'Back-to-back', 'ff': 'Face-to-face', 'fb': 'Face-to-back'}
-# name, palette detail, default caption
+# Equipment is drawn at canvas scale with the viewBox as the symbol's box, so it needs no bounds.
+# Listed in palette order: name, palette detail, default caption.
 EQUIPMENT = {
-    'accumulator': ('Accumulator', 'Process equipment', 'ACCUMULATOR'),
-    'circulating-pump': ('Circulating pump', 'Process equipment', 'CIRCULATING PUMP'),
-    'cooler': ('Cooler', 'Process equipment', 'COOLER'),
-    'heater': ('Heater', 'Process equipment', 'HEATER'),
     'reservoir': ('Reservoir', 'Process equipment', 'RESERVOIR'),
+    'nitrogen': ('Reservoir + N₂ top connection', 'Process equipment', 'N₂ RESERVOIR'),
+    'accumulator': ('Accumulator', 'Process equipment', 'ACCUMULATOR'),
+    'cooler': ('Cooler', 'Process equipment', 'COOLER'),
+    'cooler-dual': ('Cooler, two coils', 'Process equipment', 'COOLER'),
+    'heater': ('Heater', 'Process equipment', 'HEATER'),
+    'circulating-pump': ('Circulating pump', 'Process equipment', 'CIRCULATING PUMP'),
+    'air-driven-pump': ('Air driven pump', 'Air operated pump', 'AIR PUMP'),
     'control-valve': ('Pressure control valve', 'Dome-loaded', 'PRESSURE CONTROL VALVE'),
 }
 
@@ -46,7 +50,7 @@ def symbol_catalog():
     """Crop each media SVG to its artwork and return it as an embeddable catalog entry."""
     ET.register_namespace('', SVG)
     catalog = {}
-    for key, bounds in BOUNDS.items():
+    for key in [*BOUNDS, *EQUIPMENT]:
         source = ROOT / 'media' / SOURCE_FILES.get(key, key + '.svg')
         root = ET.parse(source).getroot()
         # Retain artwork and remove editor metadata, leaving a portable SVG image.
@@ -57,20 +61,26 @@ def symbol_catalog():
             for attr in list(parent.attrib):
                 if attr.startswith('{') and not attr.startswith('{http://www.w3.org/XML/1998/namespace}'):
                     del parent.attrib[attr]
-        x, y, width, height = bounds
-        x -= 2; y -= 2; width += 4; height += 4
-        root.set('viewBox', f'{x} {y} {width} {height}')
-        root.set('width', str(width))
-        root.set('height', str(height))
-        if key.startswith('dual-seal-'):
+        if key in BOUNDS:
+            x, y, width, height = BOUNDS[key]
+            x -= 2; y -= 2; width += 4; height += 4
+            root.set('viewBox', f'{x} {y} {width} {height}')
+            root.set('width', str(width))
+            root.set('height', str(height))
+        else:
+            width, height = (float(value) for value in root.get('viewBox').split()[2:])
+        if key == 'single-seal':
+            name, detail, tag, group = 'Single seal', '', 'SINGLE SEAL', 'seal'
+            scale = SEAL_WIDTHS[key] / width
+        elif key in BOUNDS:
             arrangement = SEAL_ARRANGEMENTS[key.split('-')[2]]
             plugless = '-wo-' in key
             name, detail, group = arrangement, 'Without plug seal' if plugless else 'With plug seal', 'seal'
             tag = arrangement.upper() + (' · WO PLUG' if plugless else ' · W PLUG')
-            scale = 455 / width
+            scale = SEAL_WIDTHS.get(key, SEAL_WIDTH) / width
         else:
             (name, detail, tag), group = EQUIPMENT[key], 'equipment'
-            scale = min(190 / width, 250 / height)
+            scale = 1
         catalog[key] = {
             'name': name, 'detail': detail, 'tag': tag, 'group': group, 'w': width * scale, 'h': height * scale,
             'version': hashlib.sha256(source.read_bytes()).hexdigest()[:12],
@@ -87,9 +97,8 @@ def js_literal(value):
 def build():
     catalog = symbol_catalog()
     injected = (
-        '// Embedded artwork, generated from media/ and src/assets/.\n'
+        '// Embedded artwork, generated from media/.\n'
         f'const MEDIA_SYMBOLS={js_literal(catalog)};\n'
-        f"const DEFAULT_SEAL_MARKUP={js_literal((SRC / 'assets' / 'single-seal.svgfrag').read_text())};\n"
     )
     scripts = [injected] + [path.read_text() for path in sorted((SRC / 'js').glob('*.js'))]
     html = (SRC / 'index.html').read_text()

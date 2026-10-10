@@ -141,7 +141,7 @@ function renderPipeProperties(box, p) {
 
 function renderNodeProperties(box, n) {
   const spec = specs[n.sealVariant] || specs[n.kind];
-  const name = n.kind === 'seal' ? (specs[n.sealVariant] ? `${spec.name} · ${spec.detail}` : 'Mechanical seal') : spec?.name || n.kind;
+  const name = n.kind === 'seal' ? (specs[n.sealVariant] ? [spec.name, spec.detail].filter(Boolean).join(' · ') : 'Mechanical seal') : spec?.name || n.kind;
   const editable = portEditable(n);
   const mirrored = [n[mirrorKey(n, 'x')] ? 'horizontal' : '', n[mirrorKey(n, 'y')] ? 'vertical' : ''].filter(Boolean).join(' + ') || 'none';
   const ports = n.ports.map(p => editable

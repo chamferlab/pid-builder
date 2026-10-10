@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Drawn at canvas scale: one SVG unit is one drawing unit, and the viewBox is the symbol's box. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="170" height="215" viewBox="0 0 170 215">
+  <title>Reservoir with nitrogen top connection</title>
+  <g fill="none" stroke="#253d51" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 35 95 V 50 Q 35 30 85 30 Q 135 30 135 50 V 95 Z" fill="#fff3c4" stroke="none"/>
+    <path d="M 35 95 H 135 V 165 Q 135 185 85 185 Q 35 185 35 165 Z" fill="#dbe7f6" stroke="none"/>
+    <path d="M 35 95 H 135" stroke="#87aade" stroke-width="1.8"/>
+    <path d="M 52 110 H 118 M 64 122 H 106" stroke="#87aade" stroke-width="1.4"/>
+    <path d="M 35 50 Q 35 30 85 30 Q 135 30 135 50 V 165 Q 135 185 85 185 Q 35 185 35 165 Z"/>
+    <path d="M 0 107.5 H 35 M 135 107.5 H 170 M 85 0 V 30 M 85 185 V 215 M 73 10 H 97"/>
+    <text x="85" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="600" fill="#253d51" stroke="none">N₂</text>
+  </g>
+</svg>

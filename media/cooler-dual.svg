@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Drawn at canvas scale: one SVG unit is one drawing unit, and the viewBox is the symbol's box. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <title>Cooler, two coils</title>
+  <g fill="none" stroke="#253d51" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="25" y="30" width="150" height="140" rx="10" fill="#fff"/>
+    <path d="M 0 140 H 25 M 175 60 H 200"/>
+    <g stroke="#3771c8" stroke-width="2.6">
+      <path d="M 65 0 V 44 L 88 55 L 42 70 L 88 85 L 42 100 L 88 115 L 42 130 L 88 145 L 65 156 V 200"/>
+      <path d="M 135 0 V 44 L 158 55 L 112 70 L 158 85 L 112 100 L 158 115 L 112 130 L 158 145 L 135 156 V 200"/>
+    </g>
+  </g>
+</svg>
