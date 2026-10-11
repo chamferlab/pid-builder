@@ -277,6 +277,7 @@ button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--dan
       <div class="group">
         <button id="exportSVG" class="accent">Export SVG</button>
         <button id="exportPNG" class="accent">Export PNG</button>
+        <button id="exportPDF" class="accent" title="Download the sheet as a one-page PDF">Export PDF</button>
       </div>
     </div>
   </header>
@@ -1972,7 +1973,7 @@ window.addEventListener('keydown', e => {
 document.addEventListener('pointerdown', () => { historyGroup = null; }, true);
 document.addEventListener('focusin', e => { if (historyGroup && historyGroup.split(':')[0] !== e.target.id) historyGroup = null; });
 
-// Project files, seal artwork import, and SVG / PNG export.
+// Project files, seal artwork import, and SVG / PNG / PDF export.
 
 function download(name, blob) {
   const url = URL.createObjectURL(blob), a = document.createElement('a');
@@ -2055,19 +2056,65 @@ function exportMarkup() {
   return new XMLSerializer().serializeToString(copy);
 }
 $('exportSVG').onclick = () => download(baseName() + '.svg', new Blob([exportMarkup()], {type: 'image/svg+xml;charset=utf-8'}));
-$('exportPNG').onclick = () => {
-  const size = exportSize(), url = URL.createObjectURL(new Blob([exportMarkup()], {type: 'image/svg+xml;charset=utf-8'})), img = new Image();
-  img.onload = () => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = size.w * 2; canvas.height = size.h * 2;
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(blob => blob ? download(baseName() + '.png', blob) : alert('PNG export failed.'), 'image/png');
-    } catch (err) { alert('PNG export failed: ' + err.message); }
-    finally { URL.revokeObjectURL(url); }
-  };
-  img.onerror = () => { URL.revokeObjectURL(url); alert('PNG rendering failed. Check that the imported SVG does not reference external images or fonts.'); };
-  img.src = url;
+// Draws the exported sheet on a canvas, `scale` pixels to the drawing unit.
+function rasterize(scale) {
+  return new Promise((resolve, reject) => {
+    const size = exportSize(), url = URL.createObjectURL(new Blob([exportMarkup()], {type: 'image/svg+xml;charset=utf-8'})), img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(size.w * scale); canvas.height = Math.round(size.h * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas);
+      } catch (err) { reject(err); }
+      finally { URL.revokeObjectURL(url); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(Error('Check that the imported SVG does not reference external images or fonts.')); };
+    img.src = url;
+  });
+}
+$('exportPNG').onclick = async () => {
+  try {
+    const canvas = await rasterize(2);
+    canvas.toBlob(blob => blob ? download(baseName() + '.png', blob) : alert('PNG export failed.'), 'image/png');
+  } catch (err) { alert('PNG export failed: ' + err.message); }
+};
+
+// A one-page PDF holding the sheet as a lossless image. The page is the size of the SVG export,
+// one drawing unit to a CSS pixel (0.75 pt), so the home sheet is close to A3 in width.
+const PDF_MAX_SIDE = 8000;
+async function pdfBlob() {
+  const size = exportSize(), scale = Math.min(3, PDF_MAX_SIDE / Math.max(size.w, size.h));
+  const canvas = await rasterize(scale), rgba = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+  const rgb = new Uint8Array(canvas.width * canvas.height * 3);
+  for (let i = 0, j = 0; i < rgba.length; i += 4) { rgb[j++] = rgba[i]; rgb[j++] = rgba[i + 1]; rgb[j++] = rgba[i + 2]; }
+  const image = new Uint8Array(await new Response(new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const w = +(size.w * .75).toFixed(2), h = +(size.h * .75).toFixed(2), content = `q ${w} 0 0 ${h} 0 0 cm /Im0 Do Q`;
+  // Text strings are written as UTF-16BE hex, which needs no escaping.
+  const text = value => '<FEFF' + Array.from(value, c => c.charCodeAt(0).toString(16).padStart(4, '0')).join('') + '>';
+  const objects = [
+    ['<< /Type /Catalog /Pages 2 0 R >>'],
+    ['<< /Type /Pages /Kids [3 0 R] /Count 1 >>'],
+    [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`],
+    [`<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /Length ${image.length} >>\nstream\n`, image, '\nendstream'],
+    [`<< /Length ${content.length} >>\nstream\n${content}\nendstream`],
+    [`<< /Title ${text(state.title.trim() || 'Seal loop')} /Creator ${text('Seal Loop P&ID Builder')} >>`],
+  ];
+  const parts = [], offsets = [], encoder = new TextEncoder();
+  let length = 0;
+  const put = part => { const bytes = typeof part === 'string' ? encoder.encode(part) : part; parts.push(bytes); length += bytes.length; };
+  put('%PDF-1.4\n%âãÏÓ\n');
+  objects.forEach((body, i) => { offsets.push(length); put(`${i + 1} 0 obj\n`); body.forEach(put); put('\nendobj\n'); });
+  const xref = length;
+  put(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n` + offsets.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join(''));
+  put(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R /Info 6 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(parts, {type: 'application/pdf'});
+}
+$('exportPDF').onclick = async () => {
+  if (typeof CompressionStream !== 'function') return alert('PDF export needs a newer browser. Export PNG or SVG instead.');
+  setStatus('Preparing PDF…');
+  try { download(baseName() + '.pdf', await pdfBlob()); setStatus('Exported PDF'); }
+  catch (err) { setStatus('Ready'); alert('PDF export failed: ' + err.message); }
 };
 
 // Templates: named pieces of drawing kept in the browser for reuse, with a file for backup and sharing.

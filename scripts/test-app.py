@@ -7,13 +7,17 @@ Run directly to start a temporary headless Firefox, or pass --port to use an
 existing Firefox started with --headless --marionette and a temporary profile.
 """
 import argparse
+import base64
 import json
 from pathlib import Path
+import re
 import shutil
 import socket
+import struct
 import subprocess
 import tempfile
 import time
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 STORAGE = 'seal-loop-pid-v1'
@@ -1007,6 +1011,26 @@ def run_editing_tests(browser):
     exported = b.async_js("""const done=arguments[arguments.length-1],original=URL.createObjectURL;URL.createObjectURL=function(blob){blob.text().then(markup=>{const doc=new DOMParser().parseFromString(markup,'image/svg+xml'),f=doc.querySelector('.sheet-frame');
         done({view:doc.documentElement.getAttribute('viewBox'),frame:['x','y','width','height'].map(k=>+f.getAttribute(k)),number:doc.querySelector('[data-sheet=number]').textContent,editor:doc.querySelectorAll('.editor-only').length})});return original.call(this,blob)};document.getElementById('exportSVG').click();URL.createObjectURL=original;""")
     assert exported == dict(view='0 0 1500 900', frame=[12, 12, 1476, 876], number='SL-001', editor=0)
+    # The PDF is one page of the same sheet: 0.75 pt to the unit, with the drawing as a lossless image.
+    capture = """const [type,button,done]=arguments,original=URL.createObjectURL;URL.createObjectURL=function(blob){if(blob.type===type){URL.createObjectURL=original;
+        blob.arrayBuffer().then(buffer=>{const bytes=new Uint8Array(buffer);let text='';for(let i=0;i<bytes.length;i+=32768)text+=String.fromCharCode(...bytes.subarray(i,i+32768));done(btoa(text))})}return original.call(this,blob)};document.getElementById(button).click();"""
+    pdf = base64.b64decode(b.async_js(capture, ['application/pdf', 'exportPDF']))
+    assert pdf.startswith(b'%PDF-1.4') and pdf.rstrip().endswith(b'%%EOF')
+    assert b'/MediaBox [0 0 1125 675]' in pdf and b'q 1125 0 0 675 0 0 cm /Im0 Do Q' in pdf
+    assert ('Plan 53B loop'.encode('utf-16-be').hex()).encode() in pdf, 'the title is in the document information'
+    xref = int(pdf[pdf.rindex(b'startxref') + 9:pdf.rindex(b'%%EOF')])
+    entries = pdf[xref:].split(b'\n')[3:9]
+    for number, entry in enumerate(entries, 1):
+        assert pdf[int(entry[:10]):].startswith(b'%d 0 obj' % number), 'cross-reference offsets point at the objects'
+    head = pdf[int(entries[3][:10]):pdf.index(b'stream\n')]
+    assert b'/Width 4500 /Height 2700' in head
+    start = pdf.index(b'stream\n') + 7
+    pixels = zlib.decompress(pdf[start:start + int(re.search(rb'/Length (\d+)', head).group(1))])
+    assert len(pixels) == 4500 * 2700 * 3
+    pixel = lambda x, y: pixels[(y * 4500 + x) * 3:(y * 4500 + x) * 3 + 3]
+    assert pixel(5, 5) == b'\xff\xff\xff' and max(pixel(36, 1350)) < 100, 'white paper with the frame drawn on it'
+    png = base64.b64decode(b.async_js(capture, ['image/png', 'exportPNG']))
+    assert png.startswith(b'\x89PNG') and struct.unpack('>II', png[16:24]) == (3000, 1800)
     # A symbol in the title block's corner makes the sheet taller instead of being covered.
     b.js("document.querySelector('[data-kind=reservoir]').click();return true")
     drag(750, 450, 1300, 780)
@@ -1018,7 +1042,7 @@ def run_editing_tests(browser):
     assert state()['sheet']['frame'] is False and not b.js("return !!document.querySelector('.sheet-frame')")
     click('undo')
     assert state()['sheet']['frame'] is True and b.js("return !!document.querySelector('.sheet-frame')")
-    print('PASS: frame and title block on the sheet and in exports', flush=True)
+    print('PASS: frame and title block on the sheet and in SVG, PDF, and PNG exports', flush=True)
 
 
 def main():

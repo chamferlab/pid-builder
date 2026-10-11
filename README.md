@@ -1,6 +1,6 @@
 # Seal Loop P&ID Builder
 
-An offline, single-file HTML prototype for drawing mechanical seal support loops. Start with an empty canvas, drag in symbols, connect them with orthogonal pipes, number the instruments, keep recurring arrangements as templates, and export the drawing with its frame and title block as SVG or PNG. All artwork is embedded in the HTML.
+An offline, single-file HTML prototype for drawing mechanical seal support loops. Start with an empty canvas, drag in symbols, connect them with orthogonal pipes, number the instruments, keep recurring arrangements as templates, and export the drawing with its frame and title block as SVG, PNG, or PDF. All artwork is embedded in the HTML.
 
 ## Run it
 
@@ -96,21 +96,21 @@ Attached pipe endpoints follow the transformed ports. Instrument labels and capt
 
 ### Line colors
 
-Select a pipe and pick a swatch under **Properties → Appearance**: the default dark line, **Teal**, **Blue**, **Red**, or **Orange**. Colors persist in saved projects and SVG/PNG exports.
+Select a pipe and pick a swatch under **Properties → Appearance**: the default dark line, **Teal**, **Blue**, **Red**, or **Orange**. Colors persist in saved projects and SVG, PNG, and PDF exports.
 
 ### Line data
 
-Select a pipe and fill in **Line number**, **Size**, **Service**, and **Piping spec** in Properties. These are free-text fields so you can use your project's own units and naming convention. A line number appears next to the pipe and in SVG/PNG exports. All four fields are saved in project JSON and can be undone or redone.
+Select a pipe and fill in **Line number**, **Size**, **Service**, and **Piping spec** in Properties. These are free-text fields so you can use your project's own units and naming convention. A line number appears next to the pipe and in SVG, PNG, and PDF exports. All four fields are saved in project JSON and can be undone or redone.
 
 Inserting an instrument, valve, or junction splits a pipe into segments of the same logical line. Editing line data on either segment updates every segment of that line. Duplicating a group of symbols copies their internal pipes into a separate logical line with the same field values. Separately drawn pipes remain separate lines even if you type the same line number on them.
 
 ### Instrument air lines
 
-Select a pipe and choose **Properties → Appearance → Instrument air** for a dashed line. Choose **Solid** to restore the solid line. The line type can be combined with any line color or flow direction and is retained in saved projects and SVG/PNG exports. Existing pipes remain solid. Inserting an instrument or junction into an instrument air line carries the dashed style onto both new sections.
+Select a pipe and choose **Properties → Appearance → Instrument air** for a dashed line. Choose **Solid** to restore the solid line. The line type can be combined with any line color or flow direction and is retained in saved projects and SVG, PNG, and PDF exports. Existing pipes remain solid. Inserting an instrument or junction into an instrument air line carries the dashed style onto both new sections.
 
 ### Pipe flow direction
 
-Select a pipe and choose **Properties → Flow arrow** to show an arrow from its first connected port to its second, reverse the arrow, or remove it. The panel names both ports. The arrow follows the pipe's longest straight segment when you move symbols or bends, matches the line color, and appears in saved projects and SVG/PNG exports. Existing pipes have no arrow until you set one. Inserting an instrument or junction into a directed pipe carries its direction onto both new sections.
+Select a pipe and choose **Properties → Flow arrow** to show an arrow from its first connected port to its second, reverse the arrow, or remove it. The panel names both ports. The arrow follows the pipe's longest straight segment when you move symbols or bends, matches the line color, and appears in saved projects and SVG, PNG, and PDF exports. Existing pipes have no arrow until you set one. Inserting an instrument or junction into a directed pipe carries its direction onto both new sections.
 
 ## Seal plans
 
@@ -195,6 +195,7 @@ Older saved drawings are converted once when opened: predefined ports on seals, 
 | **Open project** | Loads a saved project JSON. |
 | **Export SVG** | Downloads a clean drawing with embedded SVG artwork, line colors, crossing hops, and the frame and title block when they are on, without the grid, handles, previews, or selection marks. |
 | **Export PNG** | Downloads a raster image of the same sheet at twice the SVG dimensions. |
+| **Export PDF** | Downloads a one-page PDF of the same sheet. The page has the sheet's proportions, 397 × 238 mm for the starting sheet, so print it with "fit to page" on A3 or A4 landscape. The drawing is stored as an image at about 290 dpi (less on a very large sheet), not as vector lines, so text in it cannot be selected or searched; use the SVG where that matters. |
 | **Templates → Export / Import** | Downloads or loads the template library as `seal-loop-templates.json`. See [Templates](#templates). |
 
 Browser storage is local and can be cleared; **Save project** is the portable backup of a drawing, and the template export is the backup of your templates. Drawings are not shared with colleagues or uploaded to a server. Exports of imported SVGs may depend on fonts or external references in those files.
@@ -206,7 +207,7 @@ Browser storage is local and can be cleared; **Save project** is the portable ba
 - `PID-Builder.html` — the complete offline application, built from the files below.
 - `src/index.html`, `src/styles.css` — page layout and styling.
 - `src/js/` — the application, concatenated in filename order into one script:
-  `01-catalog` (symbols and constants), `02-state` (drawing state, undo, autosave), `03-geometry`, `04-routing` (pipe routes), `05-symbols` (built-in artwork), `06-render`, `07-inspector` (Properties panel), `08-actions` (edits), `09-interactions` (pointer and keyboard), `10-io` (save, open, import, export), `10-templates` (template library, editing, and its file), `11-main` (palette and startup).
+  `01-catalog` (symbols and constants), `02-state` (drawing state, undo, autosave), `03-geometry`, `04-routing` (pipe routes), `05-symbols` (built-in artwork), `06-render`, `07-inspector` (Properties panel), `08-actions` (edits), `09-interactions` (pointer and keyboard), `10-io` (save, open, import, SVG/PNG/PDF export), `10-templates` (template library, editing, and its file), `11-main` (palette and startup).
 - `media/` — source SVGs for the seals and all equipment.
 - `src/templates/` — template files built into the HTML as the seal plans.
 - `scripts/build.py` — builds `PID-Builder.html`; standard library only.
@@ -219,7 +220,7 @@ python3 scripts/test-app.py   # needs Firefox
 
 After editing an SVG in `media/`, rebuild and reload the page. Equipment needs nothing else. The seal drawings sit on a larger Inkscape page and are cropped using the bounds recorded in `BOUNDS` in `scripts/build.py`; update those if a seal's size or position on its page changes. To add an equipment symbol, add its SVG to `media/`, an entry to `EQUIPMENT` in the build script, and its nozzle ends to `PORTS` there. `PORTS` lists each symbol's default ports in the SVG's own coordinates; update it when you move a nozzle.
 
-The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, templates, default ports, alignment guides, pipe spacing, crossing hops, and the built-in seal plans. Dragging a template tile onto the sheet and the PNG export are not covered.
+The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, PDF and PNG export, templates, default ports, alignment guides, pipe spacing, crossing hops, and the built-in seal plans. The PDF and PNG exports are checked on the framed sheet. Dragging a template tile onto the sheet is not covered.
 
 ## Current scope
 
@@ -229,13 +230,11 @@ This is a drawing prototype, not a validated P&ID or an API-plan generator. Know
 - Seals and instruments start without ports. Default equipment ports are listed by hand in the build script, so they can drift from the artwork if a nozzle is moved.
 - Tag numbers run per instrument type; instruments of one loop share a number only if you set it.
 - Templates live in one browser and travel only through their export file.
+- The PDF holds the sheet as an image rather than vector artwork.
 - The equipment symbols follow common conventions but have not been checked against a drawing standard.
 
 ## Next steps
 
-In planned order:
-
-1. **PDF export** of the framed sheet.
-2. **Review of the built-in seal plans** against the arrangements actually used, and the symbols they lack (orifice, relief valve, fill connection).
+Next: **review of the built-in seal plans** against the arrangements actually used, and the symbols they lack (orifice, relief valve, fill connection).
 
 Smaller items: line size and spec shown on the pipe, a legend generated from the symbols used, more title block fields, and drawing validation.
