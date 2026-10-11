@@ -2078,6 +2078,9 @@ function exportMarkup() {
   copy.querySelectorAll('.editor-only').forEach(el => el.remove());
   copy.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
   copy.querySelector('defs')?.remove();
+  // Lines keep a constant width on screen while zooming; on paper they scale with the sheet,
+  // or a PNG or PDF drawn at several pixels to the unit would thin them.
+  copy.querySelectorAll('[vector-effect]').forEach(el => el.removeAttribute('vector-effect'));
   copy.removeAttribute('id'); copy.removeAttribute('class');
   copy.setAttribute('xmlns', NS);
   copy.setAttribute('viewBox', `${s.x} ${s.y} ${s.w} ${s.h}`);

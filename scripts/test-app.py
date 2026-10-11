@@ -1041,6 +1041,7 @@ def run_editing_tests(browser):
     assert len(pixels) == 4500 * 2700 * 3
     pixel = lambda x, y: pixels[(y * 4500 + x) * 3:(y * 4500 + x) * 3 + 3]
     assert pixel(5, 5) == b'\xff\xff\xff' and max(pixel(36, 1350)) < 100, 'white paper with the frame drawn on it'
+    assert all(max(pixel(x, 1350)) < 100 for x in (34, 36, 38)) and min(pixel(42, 1350)) > 200, 'the frame line is as wide as on the sheet, 2 units'
     png = base64.b64decode(b.async_js(capture, ['image/png', 'exportPNG']))
     assert png.startswith(b'\x89PNG') and struct.unpack('>II', png[16:24]) == (3000, 1800)
     # A symbol in the title block's corner makes the sheet taller instead of being covered.
