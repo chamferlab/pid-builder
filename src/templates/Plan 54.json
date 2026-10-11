@@ -1,0 +1,188 @@
+{
+  "type": "seal-loop-pid-templates",
+  "version": 1,
+  "templates": [
+    {
+      "id": "tmv3dznv13nxa",
+      "name": "Plan 54",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "seal",
+          "x": -142,
+          "y": 70,
+          "tag": "BACK-TO-BACK · WO PLUG",
+          "notes": "",
+          "ports": [
+            {
+              "id": "P1",
+              "x": 115,
+              "y": -141,
+              "custom": true
+            },
+            {
+              "id": "P3",
+              "x": 142,
+              "y": 143,
+              "custom": true
+            }
+          ],
+          "w": 454.99999999999994,
+          "h": 341.6146375241916,
+          "sealVariant": "dual-seal-bb-wo-plug",
+          "artworkSource": "media"
+        },
+        {
+          "id": "n2",
+          "kind": "TI",
+          "x": 158,
+          "y": -350,
+          "tag": "TI",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -45,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 45,
+              "y": 0
+            }
+          ],
+          "w": 90,
+          "h": 90,
+          "number": "101",
+          "orientation": "horizontal"
+        },
+        {
+          "id": "n3",
+          "kind": "isolation-valve",
+          "x": 308,
+          "y": -350,
+          "tag": "TO BARRIER SYSTEM",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -48,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 48,
+              "y": 0
+            }
+          ],
+          "w": 96,
+          "h": 80
+        },
+        {
+          "id": "n4",
+          "kind": "PI",
+          "x": 168,
+          "y": 348,
+          "tag": "PI",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -45,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 45,
+              "y": 0
+            }
+          ],
+          "w": 90,
+          "h": 90,
+          "number": "101",
+          "orientation": "horizontal"
+        },
+        {
+          "id": "n5",
+          "kind": "isolation-valve",
+          "x": 318,
+          "y": 348,
+          "tag": "FROM BARRIER SYSTEM",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -48,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 48,
+              "y": 0
+            }
+          ],
+          "w": 96,
+          "h": 80
+        }
+      ],
+      "pipes": [
+        {
+          "id": "n6",
+          "lineId": "n6",
+          "a": {
+            "node": "n1",
+            "port": "P1"
+          },
+          "b": {
+            "node": "n2",
+            "port": "L"
+          },
+          "direction": "forward",
+          "color": "red"
+        },
+        {
+          "id": "n7",
+          "lineId": "n7",
+          "a": {
+            "node": "n2",
+            "port": "R"
+          },
+          "b": {
+            "node": "n3",
+            "port": "L"
+          },
+          "direction": "forward",
+          "color": "red"
+        },
+        {
+          "id": "n8",
+          "lineId": "n8",
+          "a": {
+            "node": "n5",
+            "port": "L"
+          },
+          "b": {
+            "node": "n4",
+            "port": "R"
+          },
+          "direction": "forward",
+          "color": "blue"
+        },
+        {
+          "id": "n10",
+          "lineId": "n10",
+          "a": {
+            "node": "n1",
+            "port": "P3"
+          },
+          "b": {
+            "node": "n4",
+            "port": "L"
+          },
+          "direction": "reverse",
+          "color": "blue"
+        }
+      ]
+    }
+  ]
+}

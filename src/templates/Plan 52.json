@@ -1,0 +1,283 @@
+{
+  "type": "seal-loop-pid-templates",
+  "version": 1,
+  "templates": [
+    {
+      "id": "tmv3ds5mowvfw",
+      "name": "Plan 52",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "seal",
+          "x": -272,
+          "y": 332,
+          "tag": "FACE-TO-BACK · WO PLUG",
+          "notes": "",
+          "ports": [
+            {
+              "id": "P1",
+              "x": 120,
+              "y": -152,
+              "custom": true
+            },
+            {
+              "id": "P2",
+              "x": 147,
+              "y": 155,
+              "custom": true
+            }
+          ],
+          "w": 455,
+          "h": 363.6845533931372,
+          "sealVariant": "dual-seal-fb-wo-plug",
+          "artworkSource": "media"
+        },
+        {
+          "id": "n2",
+          "kind": "reservoir",
+          "x": 248,
+          "y": -48,
+          "tag": "BUFFER RESERVOIR",
+          "notes": "",
+          "ports": [
+            {
+              "id": "P1",
+              "x": 0,
+              "y": -107
+            },
+            {
+              "id": "P2",
+              "x": -85,
+              "y": 0
+            },
+            {
+              "id": "P3",
+              "x": 85,
+              "y": 0
+            },
+            {
+              "id": "P4",
+              "x": 0,
+              "y": 108
+            }
+          ],
+          "w": 170,
+          "h": 215,
+          "artworkSource": "media",
+          "artworkVersion": "36b05302573b"
+        },
+        {
+          "id": "n3",
+          "kind": "junction",
+          "x": 248,
+          "y": -228,
+          "tag": "",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -22,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 22,
+              "y": 0
+            },
+            {
+              "id": "T",
+              "x": 0,
+              "y": -22
+            },
+            {
+              "id": "B",
+              "x": 0,
+              "y": 22
+            }
+          ],
+          "w": 44,
+          "h": 44
+        },
+        {
+          "id": "n4",
+          "kind": "isolation-valve",
+          "x": 248,
+          "y": -348,
+          "tag": "TO FLARE",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -48,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 48,
+              "y": 0
+            }
+          ],
+          "w": 96,
+          "h": 80,
+          "rotation": 90,
+          "orientation": "vertical"
+        },
+        {
+          "id": "n5",
+          "kind": "PT",
+          "x": 368,
+          "y": -228,
+          "tag": "PT",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -45,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 45,
+              "y": 0
+            }
+          ],
+          "w": 90,
+          "h": 90,
+          "number": "101",
+          "orientation": "horizontal"
+        },
+        {
+          "id": "n6",
+          "kind": "vent",
+          "x": 248,
+          "y": -463,
+          "tag": "",
+          "notes": "",
+          "ports": [
+            {
+              "id": "P1",
+              "x": 0,
+              "y": 45
+            }
+          ],
+          "w": 70,
+          "h": 90
+        },
+        {
+          "id": "n7",
+          "kind": "LT",
+          "x": 448,
+          "y": -48,
+          "tag": "LT",
+          "notes": "",
+          "ports": [
+            {
+              "id": "L",
+              "x": -45,
+              "y": 0
+            },
+            {
+              "id": "R",
+              "x": 45,
+              "y": 0
+            }
+          ],
+          "w": 90,
+          "h": 90,
+          "number": "101",
+          "orientation": "horizontal"
+        }
+      ],
+      "pipes": [
+        {
+          "id": "n8",
+          "lineId": "n8",
+          "a": {
+            "node": "n1",
+            "port": "P1"
+          },
+          "b": {
+            "node": "n2",
+            "port": "P2"
+          },
+          "direction": "forward",
+          "color": "red"
+        },
+        {
+          "id": "n10",
+          "lineId": "n10",
+          "a": {
+            "node": "n2",
+            "port": "P1"
+          },
+          "b": {
+            "node": "n3",
+            "port": "B"
+          }
+        },
+        {
+          "id": "n11",
+          "lineId": "n11",
+          "a": {
+            "node": "n3",
+            "port": "T"
+          },
+          "b": {
+            "node": "n4",
+            "port": "R"
+          }
+        },
+        {
+          "id": "n12",
+          "lineId": "n12",
+          "a": {
+            "node": "n3",
+            "port": "R"
+          },
+          "b": {
+            "node": "n5",
+            "port": "L"
+          }
+        },
+        {
+          "id": "n13",
+          "lineId": "n13",
+          "a": {
+            "node": "n4",
+            "port": "L"
+          },
+          "b": {
+            "node": "n6",
+            "port": "P1"
+          }
+        },
+        {
+          "id": "n14",
+          "lineId": "n14",
+          "a": {
+            "node": "n2",
+            "port": "P3"
+          },
+          "b": {
+            "node": "n7",
+            "port": "L"
+          }
+        },
+        {
+          "id": "n15",
+          "lineId": "n15",
+          "a": {
+            "node": "n1",
+            "port": "P2"
+          },
+          "b": {
+            "node": "n2",
+            "port": "P4"
+          },
+          "direction": "reverse",
+          "color": "blue"
+        }
+      ]
+    }
+  ]
+}
