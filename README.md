@@ -4,7 +4,7 @@ An offline, single-file HTML prototype for drawing mechanical seal support loops
 
 ## Run it
 
-Open [`PID-Builder.html`](PID-Builder.html) in a desktop browser. No installation, server, account, or network connection is required.
+Open [`PID-Builder.html`](PID-Builder.html) in a desktop browser. No installation, server, account, or network connection is required. To share it with colleagues from one computer, see [Host it for colleagues](#host-it-for-colleagues).
 
 The browser restores the last drawing automatically. Choose **New** for an empty canvas; save your existing drawing first if you want to keep it. After updating the HTML, reload the page to use the latest controls and symbols.
 
@@ -214,6 +214,71 @@ Older saved drawings are converted once when opened: predefined ports on seals, 
 
 Browser storage is local and can be cleared; **Save project** is the portable backup of a drawing, and the template export is the backup of your templates. Drawings are not shared with colleagues or uploaded to a server. Exports of imported SVGs may depend on fonts or external references in those files.
 
+## Host it for colleagues
+
+The application is one page with no server side, so hosting it means handing out `PID-Builder.html` from a computer that stays on. `scripts/serve.py` does that with Python alone. Everyone who opens the address gets the same builder; each person's drawings and templates stay in their own browser, and nothing they draw is sent to the host.
+
+### 1. Prepare the host computer
+
+1. Pick a computer that stays on during working hours and is on the same network as the people who will use it. Note its name (`hostname` in a terminal) or ask IT for a fixed address for it.
+2. Install Python 3.8 or later if it is missing: from [python.org](https://www.python.org/downloads/) on Windows (tick **Add python.exe to PATH**), or with the package manager on Linux. Nothing else is needed.
+3. Put the project on it: `git clone https://github.com/Mauser1987/pid-builder.git`, or download the ZIP from GitHub and unpack it. A stable place such as `C:\pid-builder` or `/opt/pid-builder` is best. Only `PID-Builder.html` and `scripts/serve.py` are used, in those places relative to each other.
+
+### 2. Start it and try it
+
+```sh
+python3 scripts/serve.py            # Windows: py scripts\serve.py
+```
+
+It prints the addresses, for example `http://pc-0123:8080/`. Open the `localhost` one on the host first, then the network one from another computer. Add `--port 9000` if 8080 is taken.
+
+### 3. Open the firewall
+
+If the page opens on the host but not from another computer, the host's firewall is blocking the port.
+
+- **Windows:** choose **Allow** for private networks when the prompt appears on first start, or run once in an administrator PowerShell:
+  `New-NetFirewallRule -DisplayName "Seal Loop PID Builder" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Domain,Private`
+- **Linux (ufw):** `sudo ufw allow 8080/tcp`
+
+On a managed work computer this step, and running a server at all, usually needs IT's agreement; ask before you start.
+
+### 4. Start it automatically
+
+- **Windows:** Task Scheduler → **Create Task** → trigger **At startup** → action **Start a program**: program `py`, arguments `scripts\serve.py`, start in `C:\pid-builder`. Tick **Run whether user is logged on or not**.
+- **Linux:** save this as `/etc/systemd/system/pid-builder.service`, with your own user name, then run `sudo systemctl enable --now pid-builder`:
+
+  ```ini
+  [Unit]
+  Description=Seal Loop P&ID Builder
+  After=network-online.target
+
+  [Service]
+  User=YOUR_USER
+  WorkingDirectory=/opt/pid-builder
+  ExecStart=/usr/bin/python3 scripts/serve.py
+  Restart=on-failure
+
+  [Install]
+  WantedBy=multi-user.target
+  ```
+
+### 5. Tell people the address
+
+Give them `http://HOST:8080/` to bookmark. A current Firefox, Chrome, or Edge on a desktop is needed. Tell them two things:
+
+- **Save project** is their backup and the way to hand a drawing to someone else; the same goes for the template export.
+- Their drawings belong to that address in that browser. If the host's name, address, or port changes, the builder opens empty for everyone, so have them save first and keep the address fixed.
+
+### 6. Update it
+
+Run `git pull` in the folder, or replace `PID-Builder.html` with the new one. The server does not need a restart, and people get the new version when they reload the page. Their stored drawings are kept.
+
+### What this is and is not
+
+- It is plain HTTP for a trusted office network. Do not expose the port to the internet.
+- There are no accounts and no shared storage: people cannot see or edit each other's drawings, and the host holds no drawings to back up.
+- Any other web server works as well: publish `PID-Builder.html` under the name `index.html` on IIS, nginx, or a SharePoint or intranet file area that serves HTML.
+
 ## Project files and development
 
 `PID-Builder.html` is generated. Edit the sources and rebuild; do not edit the HTML by hand.
@@ -226,6 +291,7 @@ Browser storage is local and can be cleared; **Save project** is the portable ba
 - `src/templates/` — template files built into the HTML as the seal plans.
 - `scripts/build.py` — builds `PID-Builder.html`; standard library only.
 - `scripts/test-app.py` — Firefox regression tests; standard library only.
+- `scripts/serve.py` — serves the HTML to the local network; standard library only. See [Host it for colleagues](#host-it-for-colleagues).
 
 ```sh
 python3 scripts/build.py      # after editing src/ or media/
