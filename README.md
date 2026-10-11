@@ -27,6 +27,20 @@ The browser restores the last drawing automatically. Choose **New** for an empty
 
 Pipes cannot connect a symbol to itself. A port shows as a small filled dot once a pipe is attached.
 
+### Connection labels
+
+Select a symbol and type a label next to a port under **Properties → Connection ports**; it is drawn beside the port on the sheet and in SVG, PNG, and PDF exports. On a seal the field suggests the usual connection codes, and any other text can be typed instead:
+
+| Code | Connection | Code | Connection |
+| --- | --- | --- | --- |
+| **F** | Flush | **Q** | Quench |
+| **FI** / **FO** | Flush in / out | **D** | Drain |
+| **LBI** / **LBO** | Liquid buffer or barrier in / out | **V** | Vent |
+| **GBI** / **GBO** | Gas buffer or barrier in / out | **CSV** / **CSD** | Containment seal vent / drain |
+| **C** | Cooling | **H** | Heating |
+
+Labels are text only: they do not move a port, check which way a pipe flows, or stop two ports carrying the same code. Equipment ports can be labelled the same way, for example a reservoir's supply and return. Labels are kept in saved projects and templates, and follow the port when the symbol is rotated or mirrored. The built-in seal plans come without labels.
+
 ### Pipe routes
 
 New pipes are routed automatically: they leave each port outward from the side of the symbol it sits on, and go around symbols instead of through them. Automatic routes update as you move things.
@@ -175,7 +189,7 @@ Keyboard shortcuts inside text fields retain the browser's normal text-editing b
 | --- | --- |
 | Add a port | Equipment and fittings come with ports on their nozzles. For any other point, use the **Pipe** tool, or choose **+ Port** and click a symbol. Works on transformed symbols too. |
 | Take a symbol out of a line | Alt-drag a valve, instrument, or two-way junction off the pipe, or select it and press Delete. The two sections become one pipe again and keep the line's number, colour, and flow arrow. |
-| Remove a port | Select its symbol and click the port's chip in Properties, or Alt-click the port. Connected pipes on that port are removed too. |
+| Remove a port | Select its symbol and click the × next to the port in Properties, or Alt-click the port. Connected pipes on that port are removed too. |
 | Pan | Drag empty sheet space, or drag with the middle mouse button. |
 | Zoom | Use the mouse wheel or the `−`, `%`, and `+` buttons. **Fit** (or **F**) shows the whole sheet when the frame is on, otherwise everything drawn. |
 | Cancel a connection, port placement, or insertion preview | Press Esc. |
@@ -220,7 +234,7 @@ python3 scripts/test-app.py   # needs Firefox
 
 After editing an SVG in `media/`, rebuild and reload the page. Equipment needs nothing else. The seal drawings sit on a larger Inkscape page and are cropped using the bounds recorded in `BOUNDS` in `scripts/build.py`; update those if a seal's size or position on its page changes. To add an equipment symbol, add its SVG to `media/`, an entry to `EQUIPMENT` in the build script, and its nozzle ends to `PORTS` there. `PORTS` lists each symbol's default ports in the SVG's own coordinates; update it when you move a nozzle.
 
-The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, PDF and PNG export, templates, default ports, alignment guides, pipe spacing, crossing hops, and the built-in seal plans. The PDF and PNG exports are checked on the framed sheet. Dragging a template tile onto the sheet is not covered.
+The tests start a separate headless Firefox with a temporary profile, so your normal browser profile is untouched. They cover undo and redo, saved-project migration, inline insertion and removal, line data, snapping, export, the Pipe tool, automatic routing, area selection, keyboard editing, instrument tag numbers, the frame and title block, PDF and PNG export, templates, default ports, port labels, alignment guides, pipe spacing, crossing hops, and the built-in seal plans. The PDF and PNG exports are checked on the framed sheet. Dragging a template tile onto the sheet is not covered.
 
 ## Current scope
 

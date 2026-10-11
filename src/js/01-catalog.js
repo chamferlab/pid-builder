@@ -47,6 +47,16 @@ specs.seal = {name: 'Mechanical seal', group: 'seal', w: specs[DEFAULT_SEAL].w, 
 
 const JUNCTION_PORTS = [{id: 'L', x: -22, y: 0}, {id: 'R', x: 22, y: 0}, {id: 'T', x: 0, y: -22}, {id: 'B', x: 0, y: 22}];
 
+// Connection codes offered when labelling a seal port; any other text can be typed instead.
+const SEAL_CONNECTIONS = [
+  ['F', 'Flush'], ['FI', 'Flush in'], ['FO', 'Flush out'],
+  ['LBI', 'Liquid buffer / barrier in'], ['LBO', 'Liquid buffer / barrier out'],
+  ['GBI', 'Gas buffer / barrier in'], ['GBO', 'Gas buffer / barrier out'],
+  ['Q', 'Quench'], ['D', 'Drain'], ['V', 'Vent'],
+  ['CSV', 'Containment seal vent'], ['CSD', 'Containment seal drain'],
+  ['C', 'Cooling'], ['H', 'Heating']
+];
+
 // The ports a new symbol of this kind starts with, on the nozzles its artwork shows.
 const defaultPorts = kind => structuredClone(specs[kind]?.ports || []);
 const isInstrument = kind => specs[kind]?.group === 'instrument';

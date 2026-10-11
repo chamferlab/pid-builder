@@ -207,6 +207,10 @@ textarea.text { resize: vertical; min-height: 60px; }
 .size { flex: 1; display: flex; align-items: center; gap: 4px; color: var(--muted); }
 .size .text { min-width: 0; }
 
+.port-rows { display: grid; gap: 4px; }
+.port-row { display: flex; align-items: center; gap: 6px; }
+.port-row .text { flex: 1; min-width: 0; }
+.port-id { width: 22px; color: var(--muted); font-size: 11px; }
 .chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .chip { padding: 3px 8px; border: 1px solid #cfdae5; border-radius: 999px; background: #f7fafc; color: #2e455e; }
 button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--danger); }

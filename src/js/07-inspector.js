@@ -78,7 +78,7 @@ function renderPipeProperties(box, p) {
   const r = pipeRoute(p);
   if (!r) { selected = null; renderDrawingProperties(box); return; }
   const {a, b, g} = r, line = lineKey(p), segmentCount = state.pipes.filter(candidate => lineKey(candidate) === line).length;
-  const endName = ref => `${escapeHtml(byId(ref.node)?.tag || specs[byId(ref.node)?.kind]?.name || ref.node)} (${escapeHtml(ref.port)})`;
+  const endName = ref => `${escapeHtml(byId(ref.node)?.tag || specs[byId(ref.node)?.kind]?.name || ref.node)} (${escapeHtml(findPort(ref)?.label || ref.port)})`;
   const air = p.service === 'instrument-air';
   const routeKind = g.elbow ? 'elbow' : g.waypoints ? 'waypoints' : g.auto ? 'auto' : 'middle';
   const routeHelp = {
@@ -161,9 +161,11 @@ function renderNodeProperties(box, n) {
   const name = n.kind === 'seal' ? (specs[n.sealVariant] ? [spec.name, spec.detail].filter(Boolean).join(' · ') : 'Mechanical seal') : spec?.name || n.kind;
   const editable = portEditable(n);
   const mirrored = [n[mirrorKey(n, 'x')] ? 'horizontal' : '', n[mirrorKey(n, 'y')] ? 'vertical' : ''].filter(Boolean).join(' + ') || 'none';
+  const isSeal = n.kind === 'seal';
   const ports = n.ports.map(p => editable
-    ? `<button class="chip" type="button" data-remove-port="${escapeHtml(p.id)}" title="Remove port ${escapeHtml(p.id)} and its pipes">${escapeHtml(p.id)} <span aria-hidden="true">×</span></button>`
+    ? `<div class="port-row"><span class="port-id">${escapeHtml(p.id)}</span><input class="text" id="portLabel-${escapeHtml(p.id)}" data-port-label="${escapeHtml(p.id)}" value="${escapeHtml(p.label)}" maxlength="12" placeholder="${isSeal ? 'Label, e.g. LBI' : 'Label'}" ${isSeal ? 'list="sealConnections"' : ''} title="Shown beside the port on the sheet"><button class="chip" type="button" data-remove-port="${escapeHtml(p.id)}" title="Remove port ${escapeHtml(p.id)} and its pipes" aria-label="Remove port ${escapeHtml(p.id)}">×</button></div>`
     : `<span class="chip">${escapeHtml(p.id)}</span>`).join('');
+  const codes = isSeal ? `<datalist id="sealConnections">${SEAL_CONNECTIONS.map(([code, meaning]) => `<option value="${code}">${meaning}</option>`).join('')}</datalist>` : '';
 
   box.innerHTML = `
     <div class="info"><b>${escapeHtml(name)}</b><br>X ${Math.round(n.x)}, Y ${Math.round(n.y)}</div>
@@ -171,7 +173,7 @@ function renderNodeProperties(box, n) {
     ${field(isInstrument(n.kind) ? 'Caption' : 'Tag / caption', 'tagEdit', n.tag)}
 
     <div class="panel-title">Connection ports</div>
-    <div class="chips">${ports || '<span class="muted">None yet. The Pipe tool adds them as you connect.</span>'}</div>
+    <div class="${editable ? 'port-rows' : 'chips'}">${ports || '<span class="muted">None yet. The Pipe tool adds them as you connect.</span>'}</div>${codes}
     ${editable ? '<button class="button block" id="addPortHere" type="button">+ Add port</button>' : ''}
 
     <div class="panel-title">Size and orientation</div>
@@ -210,6 +212,11 @@ function renderNodeProperties(box, n) {
   $('mirrorVertical').onclick = () => { const key = mirrorKey(n, 'y'); n[key] = !n[key]; applyTransform(); };
   $('resetTransform').onclick = () => { delete n.scale; delete n.rotation; delete n.mirrorX; delete n.mirrorY; applyTransform(); };
   if (editable) $('addPortHere').onclick = () => setMode('addPort');
+  box.querySelectorAll('[data-port-label]').forEach(input => input.oninput = () => {
+    const port = n.ports.find(p => p.id === input.dataset.portLabel), label = input.value.trim();
+    if (label) port.label = label; else delete port.label;
+    renderCanvasOnly(); persist(`portLabel:${n.id}:${port.id}`);
+  });
   box.querySelectorAll('[data-remove-port]').forEach(button => button.onclick = () => removePort(n.id, button.dataset.removePort));
   $('duplicateSelected').onclick = e => duplicateNode(n, e.altKey);
   $('saveTemplate').onclick = saveSelectionAsTemplate;

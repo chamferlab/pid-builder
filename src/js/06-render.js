@@ -142,6 +142,14 @@ function renderSheet() {
     cx += width;
   }
 }
+// Port labels such as LBI sit beside the port, clear of the pipe that leaves it.
+function portLabelMarkup(n) {
+  return n.ports.filter(p => p.label).map(p => {
+    const q = transformPoint(n, p), facing = portFacing({node: n.id, port: p.id}), side = facing === 'L' ? -1 : 1;
+    const y = facing === 'B' ? q.y + 17 : q.y - 8;
+    return `<text class="port-label" x="${q.x + side * 8}" y="${y}" text-anchor="${side < 0 ? 'end' : 'start'}" font-size="13" font-family="Arial,sans-serif" font-weight="700" fill="${INK}" stroke="#fff" stroke-width="3" paint-order="stroke" pointer-events="none">${escapeHtml(p.label)}</text>`;
+  }).join('');
+}
 
 function renderNodes() {
   const layer = layers.nodes, live = new Set();
@@ -169,7 +177,7 @@ function renderNodes() {
       artwork.innerHTML = symbolMarkup(n);
       el.artworkKey = key; el.artworkImage = image;
     }
-    labels.innerHTML = captionMarkup(n);
+    labels.innerHTML = captionMarkup(n) + portLabelMarkup(n);
     ports.replaceChildren();
     for (const p of n.ports) {
       const q = transformPoint(n, p), isPending = pending?.node === n.id && pending.port === p.id;

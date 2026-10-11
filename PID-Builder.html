@@ -215,6 +215,10 @@ textarea.text { resize: vertical; min-height: 60px; }
 .size { flex: 1; display: flex; align-items: center; gap: 4px; color: var(--muted); }
 .size .text { min-width: 0; }
 
+.port-rows { display: grid; gap: 4px; }
+.port-row { display: flex; align-items: center; gap: 6px; }
+.port-row .text { flex: 1; min-width: 0; }
+.port-id { width: 22px; color: var(--muted); font-size: 11px; }
 .chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .chip { padding: 3px 8px; border: 1px solid #cfdae5; border-radius: 999px; background: #f7fafc; color: #2e455e; }
 button.chip:hover { border-color: #e3aab0; background: #fdf0f1; color: var(--danger); }
@@ -377,6 +381,16 @@ const DEFAULT_SEAL = 'single-seal';
 specs.seal = {name: 'Mechanical seal', group: 'seal', w: specs[DEFAULT_SEAL].w, h: specs[DEFAULT_SEAL].h, tag: 'SEAL', hidden: true};
 
 const JUNCTION_PORTS = [{id: 'L', x: -22, y: 0}, {id: 'R', x: 22, y: 0}, {id: 'T', x: 0, y: -22}, {id: 'B', x: 0, y: 22}];
+
+// Connection codes offered when labelling a seal port; any other text can be typed instead.
+const SEAL_CONNECTIONS = [
+  ['F', 'Flush'], ['FI', 'Flush in'], ['FO', 'Flush out'],
+  ['LBI', 'Liquid buffer / barrier in'], ['LBO', 'Liquid buffer / barrier out'],
+  ['GBI', 'Gas buffer / barrier in'], ['GBO', 'Gas buffer / barrier out'],
+  ['Q', 'Quench'], ['D', 'Drain'], ['V', 'Vent'],
+  ['CSV', 'Containment seal vent'], ['CSD', 'Containment seal drain'],
+  ['C', 'Cooling'], ['H', 'Heating']
+];
 
 // The ports a new symbol of this kind starts with, on the nozzles its artwork shows.
 const defaultPorts = kind => structuredClone(specs[kind]?.ports || []);
@@ -1146,6 +1160,14 @@ function renderSheet() {
     cx += width;
   }
 }
+// Port labels such as LBI sit beside the port, clear of the pipe that leaves it.
+function portLabelMarkup(n) {
+  return n.ports.filter(p => p.label).map(p => {
+    const q = transformPoint(n, p), facing = portFacing({node: n.id, port: p.id}), side = facing === 'L' ? -1 : 1;
+    const y = facing === 'B' ? q.y + 17 : q.y - 8;
+    return `<text class="port-label" x="${q.x + side * 8}" y="${y}" text-anchor="${side < 0 ? 'end' : 'start'}" font-size="13" font-family="Arial,sans-serif" font-weight="700" fill="${INK}" stroke="#fff" stroke-width="3" paint-order="stroke" pointer-events="none">${escapeHtml(p.label)}</text>`;
+  }).join('');
+}
 
 function renderNodes() {
   const layer = layers.nodes, live = new Set();
@@ -1173,7 +1195,7 @@ function renderNodes() {
       artwork.innerHTML = symbolMarkup(n);
       el.artworkKey = key; el.artworkImage = image;
     }
-    labels.innerHTML = captionMarkup(n);
+    labels.innerHTML = captionMarkup(n) + portLabelMarkup(n);
     ports.replaceChildren();
     for (const p of n.ports) {
       const q = transformPoint(n, p), isPending = pending?.node === n.id && pending.port === p.id;
@@ -1296,7 +1318,7 @@ function renderPipeProperties(box, p) {
   const r = pipeRoute(p);
   if (!r) { selected = null; renderDrawingProperties(box); return; }
   const {a, b, g} = r, line = lineKey(p), segmentCount = state.pipes.filter(candidate => lineKey(candidate) === line).length;
-  const endName = ref => `${escapeHtml(byId(ref.node)?.tag || specs[byId(ref.node)?.kind]?.name || ref.node)} (${escapeHtml(ref.port)})`;
+  const endName = ref => `${escapeHtml(byId(ref.node)?.tag || specs[byId(ref.node)?.kind]?.name || ref.node)} (${escapeHtml(findPort(ref)?.label || ref.port)})`;
   const air = p.service === 'instrument-air';
   const routeKind = g.elbow ? 'elbow' : g.waypoints ? 'waypoints' : g.auto ? 'auto' : 'middle';
   const routeHelp = {
@@ -1379,9 +1401,11 @@ function renderNodeProperties(box, n) {
   const name = n.kind === 'seal' ? (specs[n.sealVariant] ? [spec.name, spec.detail].filter(Boolean).join(' · ') : 'Mechanical seal') : spec?.name || n.kind;
   const editable = portEditable(n);
   const mirrored = [n[mirrorKey(n, 'x')] ? 'horizontal' : '', n[mirrorKey(n, 'y')] ? 'vertical' : ''].filter(Boolean).join(' + ') || 'none';
+  const isSeal = n.kind === 'seal';
   const ports = n.ports.map(p => editable
-    ? `<button class="chip" type="button" data-remove-port="${escapeHtml(p.id)}" title="Remove port ${escapeHtml(p.id)} and its pipes">${escapeHtml(p.id)} <span aria-hidden="true">×</span></button>`
+    ? `<div class="port-row"><span class="port-id">${escapeHtml(p.id)}</span><input class="text" id="portLabel-${escapeHtml(p.id)}" data-port-label="${escapeHtml(p.id)}" value="${escapeHtml(p.label)}" maxlength="12" placeholder="${isSeal ? 'Label, e.g. LBI' : 'Label'}" ${isSeal ? 'list="sealConnections"' : ''} title="Shown beside the port on the sheet"><button class="chip" type="button" data-remove-port="${escapeHtml(p.id)}" title="Remove port ${escapeHtml(p.id)} and its pipes" aria-label="Remove port ${escapeHtml(p.id)}">×</button></div>`
     : `<span class="chip">${escapeHtml(p.id)}</span>`).join('');
+  const codes = isSeal ? `<datalist id="sealConnections">${SEAL_CONNECTIONS.map(([code, meaning]) => `<option value="${code}">${meaning}</option>`).join('')}</datalist>` : '';
 
   box.innerHTML = `
     <div class="info"><b>${escapeHtml(name)}</b><br>X ${Math.round(n.x)}, Y ${Math.round(n.y)}</div>
@@ -1389,7 +1413,7 @@ function renderNodeProperties(box, n) {
     ${field(isInstrument(n.kind) ? 'Caption' : 'Tag / caption', 'tagEdit', n.tag)}
 
     <div class="panel-title">Connection ports</div>
-    <div class="chips">${ports || '<span class="muted">None yet. The Pipe tool adds them as you connect.</span>'}</div>
+    <div class="${editable ? 'port-rows' : 'chips'}">${ports || '<span class="muted">None yet. The Pipe tool adds them as you connect.</span>'}</div>${codes}
     ${editable ? '<button class="button block" id="addPortHere" type="button">+ Add port</button>' : ''}
 
     <div class="panel-title">Size and orientation</div>
@@ -1428,6 +1452,11 @@ function renderNodeProperties(box, n) {
   $('mirrorVertical').onclick = () => { const key = mirrorKey(n, 'y'); n[key] = !n[key]; applyTransform(); };
   $('resetTransform').onclick = () => { delete n.scale; delete n.rotation; delete n.mirrorX; delete n.mirrorY; applyTransform(); };
   if (editable) $('addPortHere').onclick = () => setMode('addPort');
+  box.querySelectorAll('[data-port-label]').forEach(input => input.oninput = () => {
+    const port = n.ports.find(p => p.id === input.dataset.portLabel), label = input.value.trim();
+    if (label) port.label = label; else delete port.label;
+    renderCanvasOnly(); persist(`portLabel:${n.id}:${port.id}`);
+  });
   box.querySelectorAll('[data-remove-port]').forEach(button => button.onclick = () => removePort(n.id, button.dataset.removePort));
   $('duplicateSelected').onclick = e => duplicateNode(n, e.altKey);
   $('saveTemplate').onclick = saveSelectionAsTemplate;

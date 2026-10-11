@@ -474,6 +474,18 @@ def run_tests(browser):
         click('addPortHere')
         b.js('''const n=document.querySelectorAll('#nodes>.node')[arguments[0]],p=new DOMPoint(20,30).matrixTransform(n.getScreenCTM());n.querySelector('image').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:p.x,clientY:p.y}));return true;''', [seal_index])
     roundtrip(add_port, 'add custom seal port')
+    select(seal_index)
+    assert b.js("return [...document.querySelectorAll('#sealConnections option')].map(o=>o.value).includes('LBO')")
+    roundtrip(lambda: edit('portLabel-P1', ['L', 'LB', 'LBI']), 'port label typing grouped into one edit')
+    assert state()['nodes'][seal_index]['ports'][0]['label'] == 'LBI'
+    assert b.js("return [...document.querySelectorAll('#nodes .port-label')].map(t=>t.textContent)") == ['LBI']
+    exported_label = b.async_js("""const done=arguments[arguments.length-1],original=URL.createObjectURL;URL.createObjectURL=function(blob){blob.text().then(markup=>done(new DOMParser().parseFromString(markup,'image/svg+xml').querySelector('.port-label')?.textContent));return original.call(this,blob)};document.getElementById('exportSVG').click();URL.createObjectURL=original;""")
+    assert exported_label == 'LBI'
+    select(seal_index)
+    edit('portLabel-P1', [''])
+    assert 'label' not in state()['nodes'][seal_index]['ports'][0]
+    assert not b.js("return document.querySelectorAll('#nodes .port-label').length")
+    print('PASS: seal port label on the sheet and in the export, cleared when emptied', flush=True)
     roundtrip(lambda: b.js('document.querySelector("[data-port=P1]").dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,altKey:true}));return true'), 'remove custom seal port')
 
     def import_svg():
