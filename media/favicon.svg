@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- P&ID Builder: a seal with its piping loop and a flow arrow on the return -->
+  <rect width="32" height="32" rx="7" fill="#2b3a55"/>
+  <circle cx="11" cy="16" r="5.5" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+  <path d="M11 10.5V7H25V25H11V21.5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M21.6 14.2H28.4L25 18.8Z" fill="#ffffff"/>
+</svg>

@@ -60,21 +60,30 @@ PORTS = {
 }
 
 
+def clean_svg(source):
+    """Parse an SVG and remove editor metadata, leaving the artwork as a portable SVG image."""
+    ET.register_namespace('', SVG)
+    root = ET.parse(source).getroot()
+    for parent in list(root.iter()):
+        for child in list(parent):
+            if not child.tag.startswith('{' + SVG + '}'):
+                parent.remove(child)
+        for attr in list(parent.attrib):
+            if attr.startswith('{') and not attr.startswith('{http://www.w3.org/XML/1998/namespace}'):
+                del parent.attrib[attr]
+    return root
+
+
+def svg_data_uri(root):
+    return 'data:image/svg+xml;base64,' + base64.b64encode(ET.tostring(root, encoding='utf-8')).decode()
+
+
 def symbol_catalog():
     """Crop each media SVG to its artwork and return it as an embeddable catalog entry."""
-    ET.register_namespace('', SVG)
     catalog = {}
     for key in [*BOUNDS, *EQUIPMENT]:
         source = ROOT / 'media' / SOURCE_FILES.get(key, key + '.svg')
-        root = ET.parse(source).getroot()
-        # Retain artwork and remove editor metadata, leaving a portable SVG image.
-        for parent in list(root.iter()):
-            for child in list(parent):
-                if not child.tag.startswith('{' + SVG + '}'):
-                    parent.remove(child)
-            for attr in list(parent.attrib):
-                if attr.startswith('{') and not attr.startswith('{http://www.w3.org/XML/1998/namespace}'):
-                    del parent.attrib[attr]
+        root = clean_svg(source)
         if key in BOUNDS:
             x, y, width, height = BOUNDS[key]
             x -= 2; y -= 2; width += 4; height += 4
@@ -98,7 +107,7 @@ def symbol_catalog():
         catalog[key] = {
             'name': name, 'detail': detail, 'tag': tag, 'group': group, 'w': width * scale, 'h': height * scale,
             'version': hashlib.sha256(source.read_bytes()).hexdigest()[:12],
-            'svg': 'data:image/svg+xml;base64,' + base64.b64encode(ET.tostring(root, encoding='utf-8')).decode(),
+            'svg': svg_data_uri(root),
         }
         if key in PORTS:
             catalog[key]['ports'] = [{'id': f'P{i}', 'x': x - width / 2, 'y': y - height / 2} for i, (x, y) in enumerate(PORTS[key], 1)]
@@ -139,6 +148,7 @@ def build():
     )
     scripts = [injected] + [path.read_text(encoding="utf-8") for path in sorted((SRC / 'js').glob('*.js'))]
     html = (SRC / 'index.html').read_text(encoding="utf-8")
+    html = html.replace('@build:favicon', svg_data_uri(clean_svg(ROOT / 'media' / 'favicon.svg')))
     html = html.replace('/* @build:css */', (SRC / 'styles.css').read_text(encoding="utf-8").strip())
     html = html.replace('/* @build:js */', '\n'.join(script.strip() + '\n' for script in scripts))
     (ROOT / 'PID-Builder.html').write_text(html, encoding="utf-8")
