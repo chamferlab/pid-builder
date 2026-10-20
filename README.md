@@ -222,15 +222,15 @@ The application is one page with no server side, so hosting it means handing out
 
 1. Pick a computer that stays on during working hours and is on the same network as the people who will use it. Note its name (`hostname` in a terminal) or ask IT for a fixed address for it.
 2. Install Python 3.8 or later if it is missing: from [python.org](https://www.python.org/downloads/) on Windows (tick **Add python.exe to PATH**), or with the package manager on Linux. Nothing else is needed.
-3. Put the project on it: `git clone https://github.com/Mauser1987/pid-builder.git`, or download the ZIP from GitHub and unpack it. A stable place such as `C:\pid-builder` or `/opt/pid-builder` is best. Only `PID-Builder.html` and `scripts/serve.py` are used, in those places relative to each other.
+3. Put the project on it: `git clone https://github.com/Mauser1987/pid-builder.git`, or download the ZIP from GitHub and unpack it. A stable place such as `C:\pid-builder` or `/opt/pid-builder` is best. Only `PID-Builder.html` and the `scripts/` folder are used, in those places relative to each other.
 
 ### 2. Start it and try it
 
 ```sh
-python3 scripts/serve.py            # Windows: py scripts\serve.py
+./scripts/run_app.sh --lan          # Windows: scripts\run_app.bat --lan, or double-click it
 ```
 
-It prints the addresses, for example `http://pc-0123:8080/`. Open the `localhost` one on the host first, then the network one from another computer. Add `--port 9000` if 8080 is taken.
+It prints the addresses, for example `http://pc-0123:8080/`. Open the `localhost` one on the host first, then the network one from another computer. Add `--port 9000` to use another port. Without `--lan` the builder is served to the host only, which is handy for a quick check.
 
 ### 3. Open the firewall
 
@@ -244,7 +244,7 @@ On a managed work computer this step, and running a server at all, usually needs
 
 ### 4. Start it automatically
 
-- **Windows:** Task Scheduler → **Create Task** → trigger **At startup** → action **Start a program**: program `py`, arguments `scripts\serve.py`, start in `C:\pid-builder`. Tick **Run whether user is logged on or not**.
+- **Windows:** Task Scheduler → **Create Task** → trigger **At startup** → action **Start a program**: program `C:\pid-builder\scripts\run_app.bat`, arguments `--lan`, start in `C:\pid-builder`. Tick **Run whether user is logged on or not**.
 - **Linux:** save this as `/etc/systemd/system/pid-builder.service`, with your own user name, then run `sudo systemctl enable --now pid-builder`:
 
   ```ini
@@ -255,7 +255,7 @@ On a managed work computer this step, and running a server at all, usually needs
   [Service]
   User=YOUR_USER
   WorkingDirectory=/opt/pid-builder
-  ExecStart=/usr/bin/python3 scripts/serve.py
+  ExecStart=/usr/bin/python3 scripts/serve.py --lan
   Restart=on-failure
 
   [Install]
@@ -291,7 +291,7 @@ Run `git pull` in the folder, or replace `PID-Builder.html` with the new one. Th
 - `src/templates/` — template files built into the HTML as the seal plans.
 - `scripts/build.py` — builds `PID-Builder.html`; standard library only.
 - `scripts/test-app.py` — Firefox regression tests; standard library only.
-- `scripts/serve.py` — serves the HTML to the local network; standard library only. See [Host it for colleagues](#host-it-for-colleagues).
+- `scripts/serve.py` — serves the HTML, to the local network with `--lan`; standard library only. `scripts/run_app.sh` and `scripts/run_app.bat` start it. See [Host it for colleagues](#host-it-for-colleagues).
 
 ```sh
 python3 scripts/build.py      # after editing src/ or media/

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve PID-Builder.html to the local network, so colleagues open it in a browser.
+"""Serve PID-Builder.html, on this computer or with --lan to the local network.
 
 Uses only the Python standard library. The application is a single page with no server side:
 this only hands out the file. Drawings and templates stay in each visitor's own browser.
@@ -57,14 +57,15 @@ def lan_address():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=8080, help='Port to listen on (default 8080)')
-    parser.add_argument('--host', default='0.0.0.0', help='Address to listen on; 127.0.0.1 keeps it to this computer (default: all)')
+    parser.add_argument('--lan', action='store_true', help='Also reachable from other computers on the network (default: this computer only)')
     args = parser.parse_args()
+    host = '0.0.0.0' if args.lan else '127.0.0.1'
     if not PAGE.exists():
         raise SystemExit(f'{PAGE} is missing. Run scripts/build.py first.')
-    server = ThreadingHTTPServer((args.host, args.port), Handler)
+    server = ThreadingHTTPServer((host, args.port), Handler)
     print(f'Serving {PAGE.name}. Press Ctrl+C to stop.', flush=True)
     print(f'  On this computer: http://localhost:{args.port}/', flush=True)
-    if args.host == '0.0.0.0':
+    if args.lan:
         for name in dict.fromkeys([socket.gethostname(), lan_address()]):
             if name:
                 print(f'  On the network:   http://{name}:{args.port}/', flush=True)
