@@ -6,6 +6,8 @@ An offline, single-file HTML prototype for drawing mechanical seal support loops
 
 Open [`PID-Builder.html`](PID-Builder.html) in a desktop browser. No installation, server, account, or network connection is required. To share it with colleagues from one computer, see [Host it for colleagues](#host-it-for-colleagues).
 
+To try it without downloading anything, open **https://chamferlab.github.io/pid-builder/**. Drawings and templates made there are stored in that browser only, separately from those made with a local copy of the file.
+
 The browser restores the last drawing automatically. Choose **New** for an empty canvas; save your existing drawing first if you want to keep it. After updating the HTML, reload the page to use the latest controls and symbols.
 
 ## Build a loop
