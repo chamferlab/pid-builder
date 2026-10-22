@@ -31,13 +31,13 @@ Pipes cannot connect a symbol to itself. A port shows as a small filled dot once
 
 Select a symbol and type a label next to a port under **Properties → Connection ports**; it is drawn beside the port on the sheet and in SVG, PNG, and PDF exports. On a seal the field suggests the usual connection codes, and any other text can be typed instead:
 
-| Code | Connection | Code | Connection |
-| --- | --- | --- | --- |
-| **F** | Flush | **Q** | Quench |
-| **FI** / **FO** | Flush in / out | **D** | Drain |
-| **LBI** / **LBO** | Liquid buffer or barrier in / out | **V** | Vent |
-| **GBI** / **GBO** | Gas buffer or barrier in / out | **CSV** / **CSD** | Containment seal vent / drain |
-| **C** | Cooling | **H** | Heating |
+| Code              | Connection                        | Code              | Connection                    |
+|-------------------|-----------------------------------|-------------------|-------------------------------|
+| **F**             | Flush                             | **Q**             | Quench                        |
+| **FI** / **FO**   | Flush in / out                    | **D**             | Drain                         |
+| **LBI** / **LBO** | Liquid buffer or barrier in / out | **V**             | Vent                          |
+| **GBI** / **GBO** | Gas buffer or barrier in / out    | **CSV** / **CSD** | Containment seal vent / drain |
+| **C**             | Cooling                           | **H**             | Heating                       |
 
 Labels are text only: they do not move a port, check which way a pipe flows, or stop two ports carrying the same code. Equipment ports can be labelled the same way, for example a reservoir's supply and return. Labels are kept in saved projects and templates, and follow the port when the symbol is rotated or mirrored. The built-in seal plans come without labels.
 
@@ -51,13 +51,13 @@ Where a horizontal run crosses another pipe's vertical run, it is drawn with a s
 
 Select a pipe to adjust it. Drag the handles on the pipe, or use **Properties → Route**:
 
-| Control | Result |
-| --- | --- |
-| **Automatic** | Hands the route back to the automatic router. |
-| **+ Add bend** | Adds a draggable bend on the longest straight segment. Alt-click a bend to remove it. |
-| **Corner** (two directions) | A single corner. Click the handle on the pipe to flip it. |
-| **Middle** (vertical / horizontal) | Three segments with a draggable middle segment. |
-| **Center the middle segment** | Three segments with the middle halfway between the ports. |
+| Control                            | Result                                                                                |
+|------------------------------------|---------------------------------------------------------------------------------------|
+| **Automatic**                      | Hands the route back to the automatic router.                                         |
+| **+ Add bend**                     | Adds a draggable bend on the longest straight segment. Alt-click a bend to remove it. |
+| **Corner** (two directions)        | A single corner. Click the handle on the pipe to flip it.                             |
+| **Middle** (vertical / horizontal) | Three segments with a draggable middle segment.                                       |
+| **Center the middle segment**      | Three segments with the middle halfway between the ports.                             |
 
 Dragging a handle on an automatic route keeps the shape you set: a straight or three-segment route gets a fixed middle segment, any other shape has its corners turned into bends.
 
@@ -98,13 +98,13 @@ Drop an instrument, isolation valve, check valve, or pipe junction onto an exist
 
 Select any symbol and use **Properties**:
 
-| Control | Result |
-| --- | --- |
-| **Size (%)** | Scales the symbol uniformly from 25% to 300%. |
-| **Rotate left / right 90°** | Rotates the artwork and its ports around the symbol center. **R** rotates right, **Shift+R** left. |
-| **Mirror horizontally / vertically** | Reflects the artwork and ports in the chosen canvas direction. |
-| **Reset** | Restores the original size and clears rotation and mirroring. |
-| **Duplicate** | Copies artwork, ports, captions, notes, size, rotation, and mirroring. A numbered instrument's copy takes the next free tag number. |
+| Control                              | Result                                                                                                                              |
+|--------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| **Size (%)**                         | Scales the symbol uniformly from 25% to 300%.                                                                                       |
+| **Rotate left / right 90°**          | Rotates the artwork and its ports around the symbol center. **R** rotates right, **Shift+R** left.                                  |
+| **Mirror horizontally / vertically** | Reflects the artwork and ports in the chosen canvas direction.                                                                      |
+| **Reset**                            | Restores the original size and clears rotation and mirroring.                                                                       |
+| **Duplicate**                        | Copies artwork, ports, captions, notes, size, rotation, and mirroring. A numbered instrument's copy takes the next free tag number. |
 
 Attached pipe endpoints follow the transformed ports. Instrument labels and captions stay upright. Transformations are retained in saved projects and exports.
 
@@ -130,12 +130,12 @@ Select a pipe and choose **Properties → Flow arrow** to show an arrow from its
 
 The **Seal plans** section at the top of the palette holds ready-made loops: click or drag one onto the sheet and you get the seal, equipment, instruments, and piping already connected.
 
-| Plan | What is placed |
-| --- | --- |
-| **Plan 52** | Face-to-back dual seal, buffer reservoir, vent line to flare with valve and PT, LT on the reservoir. |
-| **Plan 53A** | Back-to-back dual seal, barrier reservoir with N₂ supply valve and PI, LT on the reservoir. |
+| Plan         | What is placed                                                                                                 |
+|--------------|----------------------------------------------------------------------------------------------------------------|
+| **Plan 52**  | Face-to-back dual seal, buffer reservoir, vent line to flare with valve and PT, LT on the reservoir.           |
+| **Plan 53A** | Back-to-back dual seal, barrier reservoir with N₂ supply valve and PI, LT on the reservoir.                    |
 | **Plan 53B** | Back-to-back dual seal, TI on the outlet, cooler, bladder accumulator on an isolation valve, PI on the return. |
-| **Plan 54** | Back-to-back dual seal, TI and valve to the external barrier system, valve and PI from it. |
+| **Plan 54**  | Back-to-back dual seal, TI and valve to the external barrier system, valve and PI from it.                     |
 
 These are starting points drawn from the general arrangement of each plan, not checked against API 682 or a project standard. They contain only symbols the palette has, so there is no orifice, pressure relief, or fill connection, and the seal ports are placed on top of the gland rather than on real connection positions. A placed plan is ordinary drawing content: change it freely, and select it and choose **Save as template** to keep your version. The built-in plans themselves cannot be edited, renamed, or deleted in the application.
 
@@ -145,13 +145,13 @@ To change what ships in the HTML, replace or add files in `src/templates/` and r
 
 A template is a piece of drawing you keep for reuse: symbols with their ports, and the pipes between them, for example a dual seal with its cooler.
 
-| To | Do this |
-| --- | --- |
-| Create a template | Select the symbols (Shift-drag an area, or Ctrl+A), choose **Save as template** in Properties, and name it. Pipes are kept when both ends are in the selection. Saving under an existing name replaces that template. |
-| Use it | Click its tile under **My templates** in the palette, or drag the tile onto the sheet. The copy is ordinary drawing content; instruments in it take the next free tag numbers. |
-| Change it | With nothing selected, find it under **Properties → Templates** and choose **Edit**. The template opens as a drawing of its own and the drawing you were working on is set aside. **Save template** replaces the template, **Save as new template** leaves it as it was and saves the sheet as another one, and **Close without saving** discards the changes; each brings your drawing back. The title is the template's name, so changing it and choosing **Save template** renames the template. |
-| Rename or delete it | Use the name field and the × button in the same list. Drawings that already used the template are not affected. |
-| Back up or share | **Export** downloads every template as `seal-loop-templates.json`; **Import** adds the templates in such a file, replacing those with the same name. |
+| To                  | Do this                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Create a template   | Select the symbols (Shift-drag an area, or Ctrl+A), choose **Save as template** in Properties, and name it. Pipes are kept when both ends are in the selection. Saving under an existing name replaces that template.                                                                                                                                                                                                                                                                               |
+| Use it              | Click its tile under **My templates** in the palette, or drag the tile onto the sheet. The copy is ordinary drawing content; instruments in it take the next free tag numbers.                                                                                                                                                                                                                                                                                                                      |
+| Change it           | With nothing selected, find it under **Properties → Templates** and choose **Edit**. The template opens as a drawing of its own and the drawing you were working on is set aside. **Save template** replaces the template, **Save as new template** leaves it as it was and saves the sheet as another one, and **Close without saving** discards the changes; each brings your drawing back. The title is the template's name, so changing it and choosing **Save template** renames the template. |
+| Rename or delete it | Use the name field and the × button in the same list. Drawings that already used the template are not affected.                                                                                                                                                                                                                                                                                                                                                                                     |
+| Back up or share    | **Export** downloads every template as `seal-loop-templates.json`; **Import** adds the templates in such a file, replacing those with the same name.                                                                                                                                                                                                                                                                                                                                                |
 
 Templates are stored in the browser, next to the autosaved drawing. They belong to that browser and to the location of `PID-Builder.html`: another browser, another computer, a moved file, or cleared site data starts with none. The exported file is the backup.
 
@@ -185,17 +185,17 @@ Keyboard shortcuts inside text fields retain the browser's normal text-editing b
 
 ## Other controls
 
-| Action | How |
-| --- | --- |
-| Add a port | Equipment and fittings come with ports on their nozzles. For any other point, use the **Pipe** tool, or choose **+ Port** and click a symbol. Works on transformed symbols too. |
-| Take a symbol out of a line | Alt-drag a valve, instrument, or two-way junction off the pipe, or select it and press Delete. The two sections become one pipe again and keep the line's number, colour, and flow arrow. |
-| Remove a port | Select its symbol and click the × next to the port in Properties, or Alt-click the port. Connected pipes on that port are removed too. |
-| Pan | Drag empty sheet space, or drag with the middle mouse button. |
-| Zoom | Use the mouse wheel or the `−`, `%`, and `+` buttons. **Fit** (or **F**) shows the whole sheet when the frame is on, otherwise everything drawn. |
-| Cancel a connection, port placement, or insertion preview | Press Esc. |
-| Delete a selected pipe or symbol | Press Delete/Backspace or use **Delete** in Properties. Deleting a symbol removes its pipes, except for an inline symbol, whose line is rejoined. |
-| Select several symbols | Shift-click symbols, Shift-drag an area, or press Ctrl/Cmd+A to select all. |
-| Switch tools | **V** Select, **P** Pipe, **Esc** back to Select. |
+| Action                                                    | How                                                                                                                                                                                       |
+|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Add a port                                                | Equipment and fittings come with ports on their nozzles. For any other point, use the **Pipe** tool, or choose **+ Port** and click a symbol. Works on transformed symbols too.           |
+| Take a symbol out of a line                               | Alt-drag a valve, instrument, or two-way junction off the pipe, or select it and press Delete. The two sections become one pipe again and keep the line's number, colour, and flow arrow. |
+| Remove a port                                             | Select its symbol and click the × next to the port in Properties, or Alt-click the port. Connected pipes on that port are removed too.                                                    |
+| Pan                                                       | Drag empty sheet space, or drag with the middle mouse button.                                                                                                                             |
+| Zoom                                                      | Use the mouse wheel or the `−`, `%`, and `+` buttons. **Fit** (or **F**) shows the whole sheet when the frame is on, otherwise everything drawn.                                          |
+| Cancel a connection, port placement, or insertion preview | Press Esc.                                                                                                                                                                                |
+| Delete a selected pipe or symbol                          | Press Delete/Backspace or use **Delete** in Properties. Deleting a symbol removes its pipes, except for an inline symbol, whose line is rejoined.                                         |
+| Select several symbols                                    | Shift-click symbols, Shift-drag an area, or press Ctrl/Cmd+A to select all.                                                                                                               |
+| Switch tools                                              | **V** Select, **P** Pipe, **Esc** back to Select.                                                                                                                                         |
 
 **Import seal SVG** replaces the selected seal, or adds a seal at the canvas center if no seal is selected. Imported artwork is stored on its own symbol. Replacement clears that seal's old ports and connected pipes; use **+ Port** to place new connection points. Older projects containing a globally imported seal remain supported.
 
@@ -203,14 +203,14 @@ Older saved drawings are converted once when opened: predefined ports on seals, 
 
 ## Save and export
 
-| Command | Result |
-| --- | --- |
-| **Save project** | Downloads editable JSON with symbols, ports, connections, routes, line data, colors, transformations, captions, tag numbers, notes, and the title block fields. Templates are not in it; they have their own export. |
-| **Open project** | Loads a saved project JSON. |
-| **Export SVG** | Downloads a clean drawing with embedded SVG artwork, line colors, crossing hops, and the frame and title block when they are on, without the grid, handles, previews, or selection marks. |
-| **Export PNG** | Downloads a raster image of the same sheet at twice the SVG dimensions. |
-| **Export PDF** | Downloads a one-page PDF of the same sheet. The page has the sheet's proportions, 397 × 238 mm for the starting sheet, so print it with "fit to page" on A3 or A4 landscape. The drawing is stored as an image at about 290 dpi (less on a very large sheet), not as vector lines, so text in it cannot be selected or searched; use the SVG where that matters. |
-| **Templates → Export / Import** | Downloads or loads the template library as `seal-loop-templates.json`. See [Templates](#templates). |
+| Command                         | Result                                                                                                                                                                                                                                                                                                                                                           |
+|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Save project**                | Downloads editable JSON with symbols, ports, connections, routes, line data, colors, transformations, captions, tag numbers, notes, and the title block fields. Templates are not in it; they have their own export.                                                                                                                                             |
+| **Open project**                | Loads a saved project JSON.                                                                                                                                                                                                                                                                                                                                      |
+| **Export SVG**                  | Downloads a clean drawing with embedded SVG artwork, line colors, crossing hops, and the frame and title block when they are on, without the grid, handles, previews, or selection marks.                                                                                                                                                                        |
+| **Export PNG**                  | Downloads a raster image of the same sheet at twice the SVG dimensions.                                                                                                                                                                                                                                                                                          |
+| **Export PDF**                  | Downloads a one-page PDF of the same sheet. The page has the sheet's proportions, 397 × 238 mm for the starting sheet, so print it with "fit to page" on A3 or A4 landscape. The drawing is stored as an image at about 290 dpi (less on a very large sheet), not as vector lines, so text in it cannot be selected or searched; use the SVG where that matters. |
+| **Templates → Export / Import** | Downloads or loads the template library as `seal-loop-templates.json`. See [Templates](#templates).                                                                                                                                                                                                                                                              |
 
 Browser storage is local and can be cleared; **Save project** is the portable backup of a drawing, and the template export is the backup of your templates. Drawings are not shared with colleagues or uploaded to a server. Exports of imported SVGs may depend on fonts or external references in those files.
 
@@ -222,7 +222,7 @@ The application is one page with no server side, so hosting it means handing out
 
 1. Pick a computer that stays on during working hours and is on the same network as the people who will use it. Note its name (`hostname` in a terminal) or ask IT for a fixed address for it.
 2. Install Python 3.8 or later if it is missing: from [python.org](https://www.python.org/downloads/) on Windows (tick **Add python.exe to PATH**), or with the package manager on Linux. Nothing else is needed.
-3. Put the project on it: `git clone https://github.com/Mauser1987/pid-builder.git`, or download the ZIP from GitHub and unpack it. A stable place such as `C:\pid-builder` or `/opt/pid-builder` is best. Only `PID-Builder.html` and the `scripts/` folder are used, in those places relative to each other.
+3. Put the project on it: `git clone https://github.com/chamferlab/pid-builder.git`, or download the ZIP from GitHub and unpack it. A stable place such as `C:\pid-builder` or `/opt/pid-builder` is best. Only `PID-Builder.html` and the `scripts/` folder are used, in those places relative to each other.
 
 ### 2. Start it and try it
 
@@ -236,8 +236,7 @@ It prints the addresses, for example `http://pc-0123:8080/`. Open the `localhost
 
 If the page opens on the host but not from another computer, the host's firewall is blocking the port.
 
-- **Windows:** choose **Allow** for private networks when the prompt appears on first start, or run once in an administrator PowerShell:
-  `New-NetFirewallRule -DisplayName "Seal Loop PID Builder" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Domain,Private`
+- **Windows:** choose **Allow** for private networks when the prompt appears on first start, or run once in an administrator PowerShell: `New-NetFirewallRule -DisplayName "Seal Loop PID Builder" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Domain,Private`
 - **Linux (ufw):** `sudo ufw allow 8080/tcp`
 
 On a managed work computer this step, and running a server at all, usually needs IT's agreement; ask before you start.
@@ -251,13 +250,13 @@ On a managed work computer this step, and running a server at all, usually needs
   [Unit]
   Description=Seal Loop P&ID Builder
   After=network-online.target
-
+  
   [Service]
   User=YOUR_USER
   WorkingDirectory=/opt/pid-builder
   ExecStart=/usr/bin/python3 scripts/serve.py --lan
   Restart=on-failure
-
+  
   [Install]
   WantedBy=multi-user.target
   ```
@@ -285,8 +284,7 @@ Run `git pull` in the folder, or replace `PID-Builder.html` with the new one. Th
 
 - `PID-Builder.html` — the complete offline application, built from the files below.
 - `src/index.html`, `src/styles.css` — page layout and styling.
-- `src/js/` — the application, concatenated in filename order into one script:
-  `01-catalog` (symbols and constants), `02-state` (drawing state, undo, autosave), `03-geometry`, `04-routing` (pipe routes), `05-symbols` (built-in artwork), `06-render`, `07-inspector` (Properties panel), `08-actions` (edits), `09-interactions` (pointer and keyboard), `10-io` (save, open, import, SVG/PNG/PDF export), `10-templates` (template library, editing, and its file), `11-main` (palette and startup).
+- `src/js/` — the application, concatenated in filename order into one script: `01-catalog` (symbols and constants), `02-state` (drawing state, undo, autosave), `03-geometry`, `04-routing` (pipe routes), `05-symbols` (built-in artwork), `06-render`, `07-inspector` (Properties panel), `08-actions` (edits), `09-interactions` (pointer and keyboard), `10-io` (save, open, import, SVG/PNG/PDF export), `10-templates` (template library, editing, and its file), `11-main` (palette and startup).
 - `media/` — source SVGs for the seals and all equipment.
 - `src/templates/` — template files built into the HTML as the seal plans.
 - `scripts/build.py` — builds `PID-Builder.html`; standard library only.
